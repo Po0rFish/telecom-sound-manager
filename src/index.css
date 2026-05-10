@@ -1,0 +1,9 @@
+body {
+  margin: 0;
+  background: #f5f6f8;
+}
+
+audio {
+  width: 100%;
+  max-width: 420px;
+}
