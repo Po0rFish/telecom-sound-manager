@@ -1,4 +1,3 @@
-import type { SoundRow } from "./dbTypes";
 import type {
   Sound,
   SoundType,
@@ -6,7 +5,7 @@ import type {
 import type { OwnerType, Owner } from "../../owners/model/types";
 import type { FormState, SoundFormPayload } from "./formTypes";
 import type { OwnerRow } from "../../owners/model/dbTypes";
-import type { SoundPayloadRow } from "../../sounds/model/dbTypes";
+import type { SoundPayloadRow, SoundRow } from "./dbTypes";
 
 const nullableToUndefined = <T>(value: T | null): T | undefined => {
   return value ?? undefined;
@@ -47,6 +46,7 @@ export const mapSoundFormToPayload = (
   form: FormState,
   uploadedAudioUrl?: string
 ): SoundFormPayload => {
+  const audioUrl = uploadedAudioUrl ?? form.audioUrl;
   const hasAudio = Boolean(uploadedAudioUrl);
 
   return {
@@ -59,7 +59,7 @@ export const mapSoundFormToPayload = (
     ownerType: form.ownerType as OwnerType,
 
     fileName: hasAudio ? form.fileName : undefined,
-    audioUrl: uploadedAudioUrl,
+    audioUrl,
     durationSec: hasAudio ? form.durationSec : undefined,
     format: hasAudio ? form.format : undefined,
 
@@ -109,10 +109,14 @@ export const mapSoundToFormState = (sound: Sound): FormState => ({
   type: sound.type,
   ownerId: sound.ownerId,
   ownerType: sound.ownerType,
+
   fileName: sound.fileName,
   audioUrl: sound.audioUrl,
   durationSec: sound.durationSec,
   format: sound.format,
+
   isActive: sound.isActive,
   moh: sound.moh,
+
+  removeAudio: false,
 });

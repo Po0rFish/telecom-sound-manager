@@ -14,7 +14,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 import type {
-  Sound} from "../model/types";
+  Sound
+} from "../model/types";
 import RequiredSetupTooltip from "./RequiredSetupTooltip";
 import type { Owner, OwnerSetupChecklistItem, OwnerType } from "../../owners/model/types";
 
@@ -105,9 +106,9 @@ function SoundCard({
               owner={owner}
               sounds={sounds}
               showCompleteMessage={false}
-              onSelectType={type => {
+              onSelectItem={item => {
                 if (owner) {
-                  onOpenRequiredSetupItem(owner.id, type);
+                  onOpenRequiredSetupItem(owner.id, item);
                 }
               }}
             />

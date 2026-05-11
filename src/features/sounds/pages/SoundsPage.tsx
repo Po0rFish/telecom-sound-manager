@@ -5,7 +5,6 @@ import {
   Button,
   Card,
   CardContent,
-  Grid,
   Stack,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -28,10 +27,10 @@ import {
 
 import { useSoundFilters } from "../hooks/useSoundFilters";
 import SoundFilters from "../components/SoundFilters";
-import SoundCard from "../components/SoundCard";
 import { getSoundsEmptyMessage } from "../model/sound.emptyState";
 // import type { SoundType } from "../model/types";
 import type { OwnerSetupChecklistItem } from "../../owners/model/types";
+import SoundCardsGrid from "../components/SoundCardsGrid";
 export default function SoundsPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -181,32 +180,14 @@ export default function SoundsPage() {
             <EmptyState message={emptyMessage} />
           </Box>
         ) : (
-          <Grid container spacing={3}>
-            {filteredSounds.map(sound => (
-              <Grid
-                key={sound.id}
-                size={{
-                  xs: 12,
-                  md: 6,
-                }}
-              >
-                <SoundCard
-                  sound={sound}
-                  ownerName={
-                    ownerMap[sound.ownerId]?.name || "Unknown owner"
-                  }
-                  ownerType={
-                    ownerMap[sound.ownerId]?.type || sound.ownerType
-                  }
-                  owner={ownerMap[sound.ownerId]}
-                  sounds={sounds}
-                  onEdit={handleEdit}
-                  onDelete={handleAskDelete}
-                  onOpenRequiredSetupItem={handleOpenRequiredSetupItem}
-                />
-              </Grid>
-            ))}
-          </Grid>
+          <SoundCardsGrid
+            sounds={filteredSounds}
+            allSounds={sounds}
+            ownerMap={ownerMap}
+            onEdit={handleEdit}
+            onDelete={handleAskDelete}
+            onOpenRequiredSetupItem={handleOpenRequiredSetupItem}
+          />
         )}
       </Stack>
 

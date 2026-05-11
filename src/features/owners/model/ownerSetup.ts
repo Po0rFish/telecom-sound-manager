@@ -1,16 +1,18 @@
 import type {
+  Owner,
+  OwnerType,
+} from "./types";
 
+import type {
   Sound,
   SoundType,
 } from "../../sounds/model/types";
 
 import type {
   ChecklistItemStatus,
-  Owner,
   OwnerSetupChecklistItem,
   OwnerSetupStatus,
   OwnerSoundStats,
-  OwnerType,
 } from "./types";
 
 const expectedSoundTypesByOwnerType: Record<
@@ -69,35 +71,59 @@ const expectedSoundTypesByOwnerType: Record<
   ],
 };
 
-const getChecklistItemStatus = (
+const getChecklistItem = (
   ownerSounds: Sound[],
-  soundType: SoundType
-): ChecklistItemStatus => {
+  soundType: SoundType,
+  label: string
+): OwnerSetupChecklistItem => {
   const matchingSounds = ownerSounds.filter(
     sound => sound.type === soundType
   );
 
   if (matchingSounds.length === 0) {
-    return "Not created";
+    return {
+      soundType,
+      label,
+      status: "Not created",
+    };
   }
 
-  const hasReadySound = matchingSounds.some(
+  const readySound = matchingSounds.find(
     sound => sound.isActive && Boolean(sound.audioUrl)
   );
-
-  if (hasReadySound) {
-    return "Ready";
+  
+  if (readySound) {
+    return {
+      soundType,
+      label,
+      status: "Ready",
+      soundId: readySound.id,
+    };
   }
 
-  const hasMissingFile = matchingSounds.some(
+  const missingFileSound = matchingSounds.find(
     sound => !sound.audioUrl
   );
 
-  if (hasMissingFile) {
-    return "Missing file";
+  if (missingFileSound) {
+    return {
+      soundType,
+      label,
+      status: "Missing file",
+      soundId: missingFileSound.id,
+    };
   }
 
-  return "Inactive";
+  const inactiveSound = matchingSounds.find(
+    sound => !sound.isActive
+  );
+
+  return {
+    soundType,
+    label,
+    status: "Inactive",
+    soundId: inactiveSound?.id || matchingSounds[0].id,
+  };
 };
 
 export const getOwnerSetupChecklist = (
@@ -106,11 +132,13 @@ export const getOwnerSetupChecklist = (
 ): OwnerSetupChecklistItem[] => {
   const ownerSounds = sounds.filter(sound => sound.ownerId === owner.id);
 
-  return expectedSoundTypesByOwnerType[owner.type].map(item => ({
-    soundType: item.soundType,
-    label: item.label,
-    status: getChecklistItemStatus(ownerSounds, item.soundType),
-  }));
+  return expectedSoundTypesByOwnerType[owner.type].map(item =>
+    getChecklistItem(
+      ownerSounds,
+      item.soundType,
+      item.label
+    )
+  );
 };
 
 const getOwnerSetupStatus = (

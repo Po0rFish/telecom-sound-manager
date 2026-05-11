@@ -21,9 +21,17 @@ interface RequiredSetupTooltipProps {
   readonly owner?: Owner;
   readonly sounds: Sound[];
   readonly showCompleteMessage?: boolean;
-  readonly onSelectType?: (item: OwnerSetupChecklistItem) => void;
+  readonly onSelectItem?: (item: OwnerSetupChecklistItem) => void;
 }
+const getSetupActionLabel = (
+  status: OwnerSetupChecklistItem["status"]
+) => {
+  if (status === "Not created") {
+    return "Create";
+  }
 
+  return "Edit";
+};
 const HtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
   <Tooltip {...props} classes={{ popper: className }} />
 ))(({ theme }) => ({
@@ -42,7 +50,7 @@ export default function RequiredSetupTooltip({
   owner,
   sounds,
   showCompleteMessage = true,
-  onSelectType,
+  onSelectItem,
 }: RequiredSetupTooltipProps) {
   if (!owner) {
     return null;
@@ -101,7 +109,7 @@ export default function RequiredSetupTooltip({
                     onClick={event => {
                       event.preventDefault();
                       event.stopPropagation();
-                      onSelectType?.(item);
+                      onSelectItem?.(item);
                     }}
                     sx={{
                       fontSize: 14,
@@ -109,7 +117,7 @@ export default function RequiredSetupTooltip({
                       textAlign: "left",
                     }}
                   >
-                    {item.label}
+                    {item.label} — {getSetupActionLabel(item.status)}
                   </Link>
 
                   <Typography

@@ -47,7 +47,6 @@ function OwnersErrorPage({ message }: OwnersErrorPageProps) {
 
 export default function OwnersPage() {
   const navigate = useNavigate();
-
   const {
     data: owners = [],
     isLoading: ownersLoading,
