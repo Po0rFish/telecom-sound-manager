@@ -48,7 +48,7 @@ This is not just a CRUD demo. The project includes business logic for checking w
 
 Each owner type has its own required sound setup.
 
-```txt
+
 Company:
 - Main greeting
 - Company announcement
@@ -65,7 +65,7 @@ Queue:
 
 User:
 - Voicemail greeting
-```
+
 
 The app checks whether required sounds:
 
@@ -75,13 +75,13 @@ The app checks whether required sounds:
 
 Possible owner setup statuses:
 
-```txt
+
 No sounds
 Needs audio
 Incomplete
 Inactive
 Ready
-```
+
 
 ### Required Setup Hint
 
@@ -107,7 +107,7 @@ If a required sound already exists but is missing an audio file or is inactive, 
 
 The project uses a feature-based structure.
 
-```txt
+
 src/
 ├── app/
 ├── features/
@@ -116,13 +116,13 @@ src/
 │   └── ui/
 ├── lib/
 └── shared/
-```
+
 
 ## Data Flow
 
 The project separates form state, frontend models, database rows, and Supabase payloads.
 
-```txt
+
 FormState
 ↓
 SoundFormPayload
@@ -134,7 +134,7 @@ Supabase insert/update
 SoundRow
 ↓
 Sound
-```
+
 
 This keeps UI state, domain models, and database structure independent from each other.
 
@@ -142,59 +142,59 @@ This keeps UI state, domain models, and database structure independent from each
 
 ### API layer
 
-```txt
+
 src/features/sounds/api/adminApiSlice.ts
-```
+
 
 Contains RTK Query endpoints for loading owners, loading sounds, creating sounds, updating sounds, and deleting sounds.
 
 ### Mappers
 
-```txt
+
 src/features/sounds/model/mappers.ts
-```
+
 
 Maps Supabase rows to frontend models and form payloads to Supabase payload rows.
 
 ### Sound model
 
-```txt
+
 src/features/sounds/model/types.ts
 src/features/sounds/model/formTypes.ts
 src/features/sounds/model/dbTypes.ts
-```
+
 
 Separates domain types, form types, and database row types.
 
 ### Owner setup logic
 
-```txt
+
 src/features/owners/model/ownerSetup.ts
-```
+
 
 Contains required sound setup rules and owner status calculation logic.
 
 ### Required setup tooltip
 
-```txt
+
 src/features/sounds/components/RequiredSetupTooltip.tsx
-```
+
 
 Displays required setup hints and allows navigation to create or edit the required sound.
 
 ### Sounds page
 
-```txt
+
 src/features/sounds/pages/SoundsPage.tsx
-```
+
 
 Displays sound records, filters, sound cards, delete confirmation, and required setup navigation.
 
 ### Owners page
 
-```txt
+
 src/features/owners/pages/OwnersPage.tsx
-```
+
 
 Displays owners, setup statistics, filters, and navigation to owner-specific sounds.
 
@@ -202,74 +202,74 @@ Displays owners, setup statistics, filters, and navigation to owner-specific sou
 
 ### 1. Clone the repository
 
-```bash
+
 git clone <repository-url>
 cd telecom-sound-manager
-```
+
 
 ### 2. Install dependencies
 
-```bash
+
 npm install
-```
+
 
 ### 3. Create environment file
 
 Create a `.env.local` file in the project root.
 
-```env
+env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
+
 
 ### 4. Start the development server
 
-```bash
+
 npm run dev
-```
+
 
 ## Available Scripts
 
 ### Start development server
 
-```bash
+
 npm run dev
-```
+
 
 ### Build project
 
-```bash
+
 npm run build
-```
+
 
 ### Preview production build
 
-```bash
+
 npm run preview
-```
+
 
 ## Environment Variables
 
 The app uses Supabase environment variables.
 
-```env
+env
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
-```
+
 
 These variables are used in:
 
-```txt
+
 src/lib/supabase.ts
-```
+
 
 ## Project Status
 
 Current status:
 
-```txt
+
 MVP completed
-```
+
 
 Implemented:
 
