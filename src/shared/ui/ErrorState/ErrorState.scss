@@ -1,0 +1,16 @@
+.error-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 180px;
+  padding: 32px;
+  text-align: center;
+  border: 1px solid rgba(211, 47, 47, 0.24);
+  border-radius: 16px;
+  background: rgba(211, 47, 47, 0.04);
+}
+
+.error-state__message {
+  max-width: 520px;
+  font-weight: 500 !important;
+}

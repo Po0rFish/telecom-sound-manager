@@ -11,19 +11,21 @@ import AddIcon from "@mui/icons-material/Add";
 
 import { useAppDispatch } from "../../../app/store";
 
-import PageContainer from "../../ui/PageContainer";
-import PageHeader from "../../ui/PageHeader";
-import PageLoader from "../../ui/PageLoader";
-import EmptyState from "../../ui/EmptyState";
-import ConfirmDialog from "../../ui/ConfirmDialog";
-import { snackbarMessages } from "../../ui/snackbar.constants";
-import { showError, showSuccess } from "../../ui/snackbar.utils";
+import { PageContainer } from "../../../shared/ui/PageContainer";
+import { PageHeader } from "../../../shared/ui/PageHeader";
+import { PageLoader } from "../../../shared/ui/PageLoader";
+import { EmptyState } from "../../../shared/ui/EmptyState";
+import { ErrorState } from "../../../shared/ui/ErrorState";
+import { getRtkQueryErrorMessage } from "../../../shared/utils/getRtkQueryErrorMessage";
+import {ConfirmDialog} from "../../../shared/ui/ConfirmDialog";
+import { snackbarMessages } from "../../../shared/ui/snackbar.constants";
+import { showError, showInfo, showSuccess } from "../../../shared/ui/snackbar.utils";
 
 import {
   useDeleteSoundMutation,
   useGetOwnersQuery,
   useGetSoundsQuery,
-} from "../api/adminApiSlice";
+} from "../api/soundsApiSlice";
 
 import { useSoundFilters } from "../hooks/useSoundFilters";
 import SoundFilters from "../components/SoundFilters";
@@ -43,14 +45,17 @@ export default function SoundsPage() {
   const {
     data: sounds = [],
     isLoading: soundsLoading,
+    error: soundsError,
   } = useGetSoundsQuery();
 
   const {
     data: owners = [],
     isLoading: ownersLoading,
+    error: ownersError,
   } = useGetOwnersQuery();
 
-  const [deleteSound] = useDeleteSoundMutation();
+  const [deleteSound, { isLoading: deleting }] = useDeleteSoundMutation();
+  const deleteInProgress = React.useRef(false);
 
   const {
     search,
@@ -116,25 +121,31 @@ export default function SoundsPage() {
   }, []);
 
   const handleConfirmDelete = React.useCallback(async () => {
-    if (!deleteId) return;
+    if (!deleteId || deleteInProgress.current) return;
+    deleteInProgress.current = true;
 
     try {
-      await deleteSound(deleteId).unwrap();
-      showSuccess(dispatch, snackbarMessages.soundDeleted);
+      const result = await deleteSound(deleteId).unwrap();
+      if (result.warning) showInfo(dispatch, result.warning);
+      else showSuccess(dispatch, snackbarMessages.soundDeleted);
     } catch (error) {
       showError(
         dispatch,
-        error instanceof Error
-          ? error.message
-          : "Failed to delete sound"
+        getRtkQueryErrorMessage(error) || "Failed to delete sound"
       );
     } finally {
+      deleteInProgress.current = false;
       setDeleteId(null);
     }
   }, [deleteId, deleteSound, dispatch]);
 
   if (soundsLoading || ownersLoading) {
     return <PageLoader />;
+  }
+
+  const errorMessage = getRtkQueryErrorMessage(soundsError || ownersError);
+  if (errorMessage) {
+    return <ErrorState message={errorMessage} />;
   }
 
   return (
@@ -154,12 +165,7 @@ export default function SoundsPage() {
       />
 
       <Stack spacing={3}>
-        <Card
-          sx={{
-            borderRadius: 3,
-            boxShadow: 1,
-          }}
-        >
+        <Card>
           <CardContent>
             <SoundFilters
               search={search}
@@ -176,7 +182,7 @@ export default function SoundsPage() {
         </Card>
 
         {filteredSounds.length === 0 ? (
-          <Box sx={{ py: 8, textAlign: "center" }}>
+          <Box>
             <EmptyState message={emptyMessage} />
           </Box>
         ) : (
@@ -195,6 +201,7 @@ export default function SoundsPage() {
         open={Boolean(deleteId)}
         title="Delete this sound?"
         confirmText="Delete"
+        busy={deleting}
         onClose={() => setDeleteId(null)}
         onConfirm={handleConfirmDelete}
       />

@@ -1,309 +1,97 @@
-# Telecom Sound Manager
+﻿# Telecom Sound Manager
 
-Telecom Sound Manager is a React + TypeScript admin dashboard for managing telecom audio records, owner-based sound assignment, and required audio setup workflows.
+A portfolio React application for managing telecom audio records and checking whether companies, departments, queues and users have their required audio configured. This is a demonstration project, not a connected telephone system.
 
-The project simulates a telecom administration interface where companies, departments, queues, and users can have assigned audio records such as greetings, announcements, queue messages, voicemail messages, and music on hold.
+## Live Demo
 
-## Overview
-
-The goal of this project is to demonstrate a practical frontend architecture for a telecom-related admin tool.
-
-The application allows users to:
-
-- manage telecom sound records
-- assign sounds to owners
-- upload and remove audio files
-- filter sounds by owner, type, search, and missing audio
-- track required audio setup for each owner type
-- navigate directly from missing setup hints to create or edit the required sound
-
-This is not just a CRUD demo. The project includes business logic for checking whether each owner has the required audio configuration.
+Deployment URL: to be added after publishing.
 
 ## Features
 
-### Sound Management
+- Dashboard with audio totals, complete configurations and actionable missing-setup items.
+- Create, edit and delete sounds; filter by owner, type, name and missing audio.
+- Upload, replace and remove MP3, WAV and OGG files up to 5 MB.
+- Audio preview in cards and forms with native playback controls, restart, error feedback and one active player at a time.
+- Owner setup checklists: required sounds must exist, contain audio and be active.
+- Automatic inactive drafts for records without audio.
+- Storage cleanup after replacement/deletion and failed saves, with separate cleanup warnings.
+- Responsive layout and shared notifications, loading and error states.
 
-- Create new sound records
-- Edit existing sound records
-- Delete sound records
-- Upload audio files
-- Replace or remove audio files
-- Automatically mark sounds without audio as inactive
-- Assign sounds to specific owners
-- Filter sounds by:
-  - search
-  - sound type
-  - owner
-  - missing audio files
+Phone recording is a UI simulation; displayed dial codes do not connect to a PBX. Owner management and authentication are not implemented.
 
-### Owner Setup Overview
+## Screenshots
 
-- View owners with setup status
-- Track total, active, inactive, and missing audio records
-- Display owner setup progress
-- Navigate from an owner directly to filtered sounds
-- Detect incomplete setup, missing audio, inactive records, and ready owners
+The browser smoke script generates screenshots using synthetic demo records:
 
-### Required Sound Setup
+![Dashboard](docs/screenshots/dashboard.png)
+![Sound list with audio previews](docs/screenshots/sounds.png)
 
-Each owner type has its own required sound setup.
+[Edit form](docs/screenshots/edit-sound.png) · [Mobile Owners page](docs/screenshots/owners-mobile.png)
 
+## Stack
 
-Company:
-- Main greeting
-- Company announcement
-- Music on hold
+React 19, TypeScript (strict), Vite, Material UI, Sass, Redux Toolkit / RTK Query, React Router and Supabase Database / Storage. Tests use the Node.js test runner without additional dependencies.
 
-Department:
-- Department greeting
-- Department announcement
+## Local setup
 
-Queue:
-- Queue message
-- Music on hold
-- Queue announcement
+Use Node.js 22.18+ (Node.js 24 recommended).
 
-User:
-- Voicemail greeting
+```sh
+npm ci
+```
 
+Copy `.env.example` to `.env.local` and fill in your demo project's public configuration:
 
-The app checks whether required sounds:
+```dotenv
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+```
 
-- exist
-- have an audio file
-- are active
+Never put a secret/service-role key in a `VITE_` variable: these values are included in the browser build. Local environment files are ignored by Git.
 
-Possible owner setup statuses:
+```sh
+npm run dev
+```
 
+Open the address printed by Vite, usually http://localhost:5173. In Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`. Restart Vite after changing environment variables.
 
-No sounds
-Needs audio
-Incomplete
-Inactive
-Ready
+The app requires existing `owners` and `sounds` tables matching the database types in `src/features/*/model/dbTypes.ts`, and a public `sounds` Storage bucket. This repository does not yet provide database migrations or seed SQL. Configure table and Storage access in your dedicated Supabase demo project; see [deployment notes](docs/DEPLOYMENT.md).
 
+## Commands
 
-### Required Setup Hint
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Development server |
+| `npm test` | Domain and audio-save regression tests |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript project checks |
+| `npm run build` | TypeScript checks and production build |
+| `npm run preview` | Preview `dist` locally |
+| `node --env-file=.env.local scripts/check-supabase.mjs` | Read-only API connectivity check |
+| `node scripts/browser-smoke.mjs` | Browser checks with synthetic API fixtures; run after build |
 
-Sound cards display a required setup hint when the related owner still needs required audio records.
+Browser checks use an installed Chrome at its default Windows path. Set `BROWSER_PATH` for another Chromium executable. They intercept external requests, never write to Supabase, and save screenshots under `docs/screenshots`. They need permission to launch a headless browser and bind a local preview port.
 
-If a required sound is not created yet, clicking the hint opens the create form with the owner and sound type preselected.
+## Architecture
 
-If a required sound already exists but is missing an audio file or is inactive, clicking the hint opens the edit form for that sound.
-
-## Tech Stack
-
-- React
-- TypeScript
-- Vite
-- Material UI
-- Redux Toolkit
-- RTK Query
-- Supabase Database
-- Supabase Storage
-- React Router
-
-## Project Architecture
-
-The project uses a feature-based structure.
-
-
+```text
 src/
-├── app/
-├── features/
-│   ├── sounds/
-│   ├── owners/
-│   └── ui/
-├── lib/
-└── shared/
-
-
-## Data Flow
-
-The project separates form state, frontend models, database rows, and Supabase payloads.
-
-
-FormState
-↓
-SoundFormPayload
-↓
-SoundPayloadRow
-↓
-Supabase insert/update
-↓
-SoundRow
-↓
-Sound
-
-
-This keeps UI state, domain models, and database structure independent from each other.
-
-## Important Files
-
-### API layer
-
-
-src/features/sounds/api/adminApiSlice.ts
-
-
-Contains RTK Query endpoints for loading owners, loading sounds, creating sounds, updating sounds, and deleting sounds.
-
-### Mappers
-
-
-src/features/sounds/model/mappers.ts
-
-
-Maps Supabase rows to frontend models and form payloads to Supabase payload rows.
-
-### Sound model
-
-
-src/features/sounds/model/types.ts
-src/features/sounds/model/formTypes.ts
-src/features/sounds/model/dbTypes.ts
-
-
-Separates domain types, form types, and database row types.
-
-### Owner setup logic
-
-
-src/features/owners/model/ownerSetup.ts
-
-
-Contains required sound setup rules and owner status calculation logic.
-
-### Required setup tooltip
-
-
-src/features/sounds/components/RequiredSetupTooltip.tsx
-
-
-Displays required setup hints and allows navigation to create or edit the required sound.
-
-### Sounds page
-
-
-src/features/sounds/pages/SoundsPage.tsx
-
-
-Displays sound records, filters, sound cards, delete confirmation, and required setup navigation.
-
-### Owners page
-
-
-src/features/owners/pages/OwnersPage.tsx
-
-
-Displays owners, setup statistics, filters, and navigation to owner-specific sounds.
-
-## Getting Started
-
-### 1. Clone the repository
-
-
-git clone <repository-url>
-cd telecom-sound-manager
-
-
-### 2. Install dependencies
-
-
-npm install
-
-
-### 3. Create environment file
-
-Create a `.env.local` file in the project root.
-
-env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-
-### 4. Start the development server
-
-
-npm run dev
-
-
-## Available Scripts
-
-### Start development server
-
-
-npm run dev
-
-
-### Build project
-
-
-npm run build
-
-
-### Preview production build
-
-
-npm run preview
-
-
-## Environment Variables
-
-The app uses Supabase environment variables.
-
-env
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
-
-
-These variables are used in:
-
-
-src/lib/supabase.ts
-
-
-## Project Status
-
-Current status:
-
-
-MVP completed
-
-
-Implemented:
-
-- Sounds CRUD
-- Owner-based sound filtering
-- Audio upload flow
-- Required sound setup logic
-- Owner setup dashboard
-- Required setup hints
-- RTK Query server state management
-- Supabase Database integration
-- Supabase Storage integration
-- Feature-based architecture
-
-## Future Improvements
-
-Possible future improvements:
-
-- Owner CRUD
-- Audio preview player
-- Dashboard statistics
-- Role-based access control
-- Supabase Row Level Security policies
-- Store required setup rules in the database
-- Deployment to Vercel or Netlify
-
-## Portfolio Notes
-
-This project demonstrates:
-
-- Building a domain-specific admin dashboard
-- React + TypeScript application architecture
-- RTK Query for server state management
-- Supabase database and storage integration
-- Feature-based project structure
-- Separation of domain models, form state, database rows, and API payloads
-- Business logic for telecom audio setup workflows
+  app/                    Routing, store, theme and UI state
+  features/
+    dashboard/            Derived overview and missing-setup navigation
+    owners/               Owner views and required-audio business rules
+    sounds/               Forms, validation, API, mapping and Storage operations
+  shared/
+    api/                  Supabase client
+    layout/               Application navigation and layout
+    ui/                   Reusable presentation components and audio player
+    utils/                Error extraction
+```
+
+Forms, domain objects and database rows are separate models. Mappers translate between them. RTK Query caches owner/sound queries across pages. Dashboard statistics reuse the same owner-setup rules as the Owners page.
+
+## Deployment and verification
+
+[Vercel deployment instructions and manual checks](docs/DEPLOYMENT.md) cover environment variables, Supabase permissions, Storage cleanup limitations and verification scenarios. `vercel.json` provides SPA fallback for direct navigation and refresh on nested routes.
+
+Publishing the frontend does not establish safe database permissions. Choose a read-only or explicitly disposable editable demo before sharing it publicly. The existing app has no authentication.

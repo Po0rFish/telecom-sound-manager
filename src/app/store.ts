@@ -5,17 +5,17 @@ import {
   type TypedUseSelectorHook,
 } from "react-redux";
 
-import uiReducer from "../features/ui/uiSlice";
-import { adminApiSlice } from "../features/sounds/api/adminApiSlice";
+import uiReducer from "./uiSlice";
+import { soundsApiSlice } from "../features/sounds/api/soundsApiSlice";
 
 export const store = configureStore({
   reducer: {
     ui: uiReducer,
-    [adminApiSlice.reducerPath]: adminApiSlice.reducer,
+    [soundsApiSlice.reducerPath]: soundsApiSlice.reducer,
   },
 
   middleware: getDefaultMiddleware =>
-    getDefaultMiddleware().concat(adminApiSlice.middleware),
+    getDefaultMiddleware().concat(soundsApiSlice.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

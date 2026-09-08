@@ -7,16 +7,16 @@ import {
   Stack,
 } from "@mui/material";
 
-import PageContainer from "../../ui/PageContainer";
-import PageHeader from "../../ui/PageHeader";
-import PageLoader from "../../ui/PageLoader";
-import EmptyState from "../../ui/EmptyState";
-import ErrorState from "../../ui/ErrorState";
+import { PageContainer } from "../../../shared/ui/PageContainer";
+import { PageHeader } from "../../../shared/ui/PageHeader";
+import {PageLoader} from "../../../shared/ui/PageLoader";
+import {EmptyState} from "../../../shared/ui/EmptyState";
+import {ErrorState} from "../../../shared/ui/ErrorState";
 
 import {
   useGetOwnersQuery,
   useGetSoundsQuery,
-} from "../../sounds/api/adminApiSlice";
+} from "../../sounds/api/soundsApiSlice";
 
 import { getRtkQueryErrorMessage } from "../../../shared/utils/getRtkQueryErrorMessage";
 

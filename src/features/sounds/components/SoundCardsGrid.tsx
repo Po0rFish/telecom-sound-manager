@@ -34,13 +34,7 @@ export default function SoundCardsGrid({
         const owner = ownerMap[sound.ownerId];
 
         return (
-          <Grid
-            key={sound.id}
-            size={{
-              xs: 12,
-              md: 6,
-            }}
-          >
+          <Grid key={sound.id} size={{ xs: 12, md: 6 }}>
             <SoundCard
               sound={sound}
               ownerName={owner?.name || "Unknown owner"}

@@ -4,7 +4,7 @@ import {
   maxAudioFileSizeBytes,
   maxAudioFileSizeMb,
   soundNamePattern,
-} from "./sound.constants";
+} from "./sound.constants.ts";
 import type { FormState } from "./formTypes";
 
 export interface SoundFormErrors {

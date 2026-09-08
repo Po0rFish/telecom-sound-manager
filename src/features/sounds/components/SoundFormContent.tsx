@@ -1,5 +1,6 @@
 import {
   useState,
+  useRef,
   type ChangeEvent,
   type FormEvent,
 } from "react";
@@ -15,15 +16,15 @@ import {
 
 import { useAppDispatch } from "../../../app/store";
 
-import PageContainer from "../../ui/PageContainer";
-import ErrorState from "../../ui/ErrorState";
-import { snackbarMessages } from "../../ui/snackbar.constants";
-import { showError, showInfo, showSuccess } from "../../ui/snackbar.utils";
+import {PageContainer} from "../../../shared/ui/PageContainer";
+import {ErrorState} from "../../../shared/ui/ErrorState";
+import { snackbarMessages } from "../../../shared/ui/snackbar.constants";
+import { showError, showInfo, showSuccess } from "../../../shared/ui/snackbar.utils";
 
 import {
   useCreateSoundMutation,
   useUpdateSoundMutation,
-} from "../api/adminApiSlice";
+} from "../api/soundsApiSlice";
 
 import { useSoundForm } from "../hooks/useSoundForm";
 import {
@@ -39,6 +40,9 @@ import SoundFormActions from "./SoundFormActions";
 
 import type { Owner } from "../../owners/model/types";
 import type { FormState } from "../model/formTypes";
+import { getRtkQueryErrorMessage } from "../../../shared/utils/getRtkQueryErrorMessage";
+import { saveSoundWithAudio } from "../model/saveSoundWithAudio";
+import { uploadSoundFile, removeUnusedSoundFile } from "../soundStorageApi";
 
 interface SoundFormContentProps {
   readonly initialValues: FormState;
@@ -61,6 +65,8 @@ export default function SoundFormContent({
   const navigate = useNavigate();
 
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const submitInProgress = useRef(false);
 
   const {
     form,
@@ -69,7 +75,6 @@ export default function SoundFormContent({
     handleOwnerChange,
     handleFileChange,
     removeFile,
-    buildPayload,
   } = useSoundForm({
     initialValues,
     owners,
@@ -79,7 +84,7 @@ export default function SoundFormContent({
   const [createSound, { isLoading: creating }] = useCreateSoundMutation();
   const [updateSound, { isLoading: updating }] = useUpdateSoundMutation();
 
-  const saving = creating || updating;
+  const saving = submitting || creating || updating;
   const hasAudio = Boolean(form.audioUrl || form.file);
   const title = isNew ? "Create Sound" : "Edit Sound";
 
@@ -112,6 +117,7 @@ export default function SoundFormContent({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitInProgress.current) return;
     setSubmitted(true);
 
     const currentErrors = validateSoundForm(form, true);
@@ -120,37 +126,29 @@ export default function SoundFormContent({
       return;
     }
 
+    submitInProgress.current = true;
+    setSubmitting(true);
+
     try {
-      const payload = await buildPayload();
-
-      if (isNew) {
-        await createSound(payload).unwrap();
-
-        showSuccess(dispatch, snackbarMessages.soundCreated);
-        navigate("/sounds");
-
-        return;
-      }
-
-      if (!soundId) {
-        showError(dispatch, "Sound ID is missing");
-        return;
-      }
-
-      await updateSound({
-        id: soundId,
-        payload,
-      }).unwrap();
-
-      showSuccess(dispatch, snackbarMessages.soundUpdated);
+      if (!isNew && !soundId) throw new Error("Sound ID is missing");
+      const warning = await saveSoundWithAudio(form, initialValues.audioUrl, {
+        upload: uploadSoundFile,
+        cleanup: removeUnusedSoundFile,
+        save: payload => isNew
+          ? createSound(payload).unwrap()
+          : updateSound({ id: soundId!, payload }).unwrap(),
+      });
+      if (warning) showInfo(dispatch, warning);
+      else showSuccess(dispatch, isNew ? snackbarMessages.soundCreated : snackbarMessages.soundUpdated);
       navigate("/sounds");
     } catch (error) {
       showError(
         dispatch,
-        error instanceof Error
-          ? error.message
-          : snackbarMessages.uploadFailed
+        getRtkQueryErrorMessage(error) || snackbarMessages.uploadFailed
       );
+    } finally {
+      submitInProgress.current = false;
+      setSubmitting(false);
     }
   };
 
@@ -170,6 +168,7 @@ export default function SoundFormContent({
           {error && <ErrorState message={error} />}
 
           <Box component="form" onSubmit={handleSubmit}>
+            <Box component="fieldset" disabled={saving} sx={{ border: 0, p: 0, m: 0, minWidth: 0 }}>
             <Stack spacing={2}>
               <SoundBasicFields
                 form={form}
@@ -208,6 +207,7 @@ export default function SoundFormContent({
                 onCancel={handleCancel}
               />
             </Stack>
+            </Box>
           </Box>
         </CardContent>
       </Card>

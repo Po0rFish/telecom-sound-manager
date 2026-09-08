@@ -17,6 +17,7 @@ import type {
   Sound
 } from "../model/types";
 import RequiredSetupTooltip from "./RequiredSetupTooltip";
+import { AudioPlayer } from "../../../shared/ui/AudioPlayer/AudioPlayer";
 import type { Owner, OwnerSetupChecklistItem, OwnerType } from "../../owners/model/types";
 
 interface SoundCardProps {
@@ -47,52 +48,24 @@ function SoundCard({
   const displayOwnerType = ownerType || sound.ownerType;
 
   return (
-    <Card
-      sx={{
-        width: "100%",
-        borderRadius: 3,
-        boxShadow: 1,
-        p: 2,
-      }}
-    >
+    <Card sx={{ width: "100%", p: 2 }}>
       <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{
-          alignItems: { xs: "flex-start", sm: "center" },
-          justifyContent: "space-between",
-        }}
-      >
+        direction="column"
+        spacing={2}>
         <Stack
           direction="row"
-          spacing={2}
-          sx={{
-            alignItems: "center",
-            minWidth: 0,
-            width: "100%",
-          }}
-        >
-          <Box
-            sx={{
-              width: 48,
-              height: 48,
-              borderRadius: "50%",
-              bgcolor: hasAudio ? "#eef2ff" : "#f3f4f6",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
+          sx={{ alignItems: "center", minWidth: 0 }}
+          spacing={2}>
+          <Box>
             {hasAudio ? (
-              <PlayArrowIcon sx={{ color: "#4338ca" }} />
+              <PlayArrowIcon />
             ) : (
-              <MusicOffIcon sx={{ color: "#9ca3af" }} />
+              <MusicOffIcon />
             )}
           </Box>
 
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }} noWrap>
+            <Typography variant="subtitle1" noWrap>
               {sound.name}
             </Typography>
 
@@ -117,14 +90,8 @@ function SoundCard({
 
         <Stack
           direction="row"
-          spacing={1}
-          sx={{
-            alignItems: "center",
-            flexShrink: 0,
-            flexWrap: "wrap",
-            rowGap: 1,
-          }}
-        >
+          sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
+          spacing={1}>
           <Chip size="small" label={sound.type} />
 
           {!hasAudio && (
@@ -137,15 +104,20 @@ function SoundCard({
             label={sound.isActive ? "Active" : "Inactive"}
           />
 
-          <IconButton onClick={() => onEdit(sound.id)}>
+          <IconButton aria-label={`Edit ${sound.name}`} onClick={() => onEdit(sound.id)}>
             <EditIcon />
           </IconButton>
 
-          <IconButton color="error" onClick={() => onDelete(sound.id)}>
+          <IconButton aria-label={`Delete ${sound.name}`} color="error" onClick={() => onDelete(sound.id)}>
             <DeleteIcon />
           </IconButton>
         </Stack>
       </Stack>
+      {sound.audioUrl && (
+        <Box sx={{ mt: 2 }}>
+          <AudioPlayer src={sound.audioUrl} label={`Preview ${sound.name}`} />
+        </Box>
+      )}
     </Card>
   );
 }

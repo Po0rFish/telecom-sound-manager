@@ -7,6 +7,7 @@ import {
 
 import type { ChangeEvent } from "react";
 import type { FormState } from "../model/formTypes";
+import { AudioPlayer } from "../../../shared/ui/AudioPlayer/AudioPlayer";
 
 interface SoundAudioSectionProps {
   readonly form: FormState;
@@ -64,11 +65,7 @@ export default function SoundAudioSection({
 
       {form.audioUrl && (
         <Box>
-          <audio
-            controls
-            src={form.audioUrl}
-            style={{ width: "100%" }}
-          />
+          <AudioPlayer src={form.audioUrl} label={`Preview ${form.name || "audio"}`} />
         </Box>
       )}
     </Stack>

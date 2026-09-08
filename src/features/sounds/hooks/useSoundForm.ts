@@ -1,8 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { validateSoundFile, validateSoundForm } from "../model/sound.validation";
-import { uploadSoundFile } from "../storage";
-import { mapSoundFormToPayload } from "../model/mappers";
 import { emptyAudioState } from "../model/sound.constants";
 import type { FormState } from "../model/formTypes";
 import type { Owner } from "../../owners/model/types";
@@ -34,6 +32,11 @@ export const useSoundForm = ({
   submitted,
 }: UseSoundFormParams) => {
   const [form, setForm] = useState<FormState>(initialValues);
+
+  useEffect(() => {
+    const audioUrl = form.audioUrl;
+    return () => revokeBlobUrl(audioUrl);
+  }, [form.audioUrl]);
 
   const errors = useMemo(
     () => validateSoundForm(form, submitted),
@@ -67,14 +70,13 @@ export const useSoundForm = ({
     const previewUrl = URL.createObjectURL(file);
 
     setForm(prev => {
-      revokeBlobUrl(prev.audioUrl);
-
       return {
         ...prev,
         file,
         fileName: file.name,
         audioUrl: previewUrl,
         format: extension,
+        durationSec: undefined,
         removeAudio: false,
       };
     });
@@ -105,27 +107,11 @@ export const useSoundForm = ({
 
   const removeFile = () => {
     setForm(prev => {
-      revokeBlobUrl(prev.audioUrl);
-
       return {
         ...prev,
         ...emptyAudioState,
       };
     });
-  };
-
-  const buildPayload = async () => {
-    let uploadedAudioUrl = form.audioUrl;
-
-    if (form.file) {
-      uploadedAudioUrl = await uploadSoundFile(form.file);
-    }
-
-    if (form.removeAudio) {
-      uploadedAudioUrl = undefined;
-    }
-
-    return mapSoundFormToPayload(form, uploadedAudioUrl);
   };
 
   return {
@@ -135,6 +121,5 @@ export const useSoundForm = ({
     handleOwnerChange,
     handleFileChange,
     removeFile,
-    buildPayload,
   };
 };

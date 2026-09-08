@@ -1,0 +1,40 @@
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.page-header__content {
+  min-width: 0;
+}
+
+.page-header__title {
+  font-weight: 700 !important;
+}
+
+.page-header__subtitle {
+  margin-top: 4px !important;
+}
+
+.page-header__action {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .page-header__action {
+    width: 100%;
+  }
+
+  .page-header__action > * {
+    width: 100%;
+  }
+}

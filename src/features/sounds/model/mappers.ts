@@ -46,8 +46,8 @@ export const mapSoundFormToPayload = (
   form: FormState,
   uploadedAudioUrl?: string
 ): SoundFormPayload => {
-  const audioUrl = uploadedAudioUrl ?? form.audioUrl;
-  const hasAudio = Boolean(uploadedAudioUrl);
+  const audioUrl = form.removeAudio ? undefined : uploadedAudioUrl ?? form.audioUrl;
+  const hasAudio = Boolean(audioUrl);
 
   return {
     name: form.name.trim(),

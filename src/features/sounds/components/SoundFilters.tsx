@@ -75,7 +75,7 @@ export default function SoundFilters({
       </TextField>
 
       <FormControlLabel
-        sx={{ minWidth: 220 }}
+        sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
         control={
           <Switch
             checked={missingAudioOnly}
