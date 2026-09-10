@@ -10,8 +10,14 @@ for (const table of ["owners", "sounds"]) {
   console.log(`${table}: HTTP ${response.status}`);
   if (!response.ok) { process.exitCode = 1; continue; }
   const records = await response.json();
-  if (table === "sounds" && records[0]?.audio_url) {
-    const audio = await fetch(records[0].audio_url, { method: "HEAD", signal: AbortSignal.timeout(15000) });
+  console.log(`${table}: ${records.length ? "sample record available" : "no visible records"}`);
+  if (table === "sounds") {
+    url.searchParams.set("audio_url", "not.is.null");
+    const sample = await fetch(url, { headers: { apikey: key }, signal: AbortSignal.timeout(15000) });
+    if (!sample.ok) { console.log(`Audio lookup: HTTP ${sample.status}`); process.exitCode = 1; continue; }
+    const [record] = await sample.json();
+    if (!record?.audio_url) { console.log("Sample audio: unavailable; playback could not be verified"); process.exitCode = 1; continue; }
+    const audio = await fetch(record.audio_url, { method: "HEAD", signal: AbortSignal.timeout(15000) });
     console.log(`Sample audio: HTTP ${audio.status}`);
     if (!audio.ok) process.exitCode = 1;
   }

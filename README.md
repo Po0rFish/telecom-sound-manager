@@ -18,6 +18,7 @@ The public demo keeps buttons and forms interactive, but saving and deleting sho
 - Automatic inactive drafts for records without audio.
 - Storage cleanup after replacement/deletion and failed saves, with separate cleanup warnings.
 - Responsive layout and shared notifications, loading and error states.
+- Switch between the default sound view and a responsive grid using the same filters and audio controls.
 
 Phone recording is a UI simulation; displayed dial codes do not connect to a PBX. Owner management and authentication are not implemented.
 
@@ -28,7 +29,7 @@ The browser smoke script generates screenshots using synthetic demo records:
 ![Dashboard](docs/screenshots/dashboard.png)
 ![Sound list with audio previews](docs/screenshots/sounds.png)
 
-[Edit form](docs/screenshots/edit-sound.png) · [Mobile Owners page](docs/screenshots/owners-mobile.png)
+[Grid view](docs/screenshots/sounds-grid.png) · [Mobile grid](docs/screenshots/sounds-grid-mobile.png) · [Edit form](docs/screenshots/edit-sound.png) · [Mobile Owners page](docs/screenshots/owners-mobile.png)
 
 ## Stack
 
@@ -96,4 +97,4 @@ Forms, domain objects and database rows are separate models. Mappers translate b
 
 [Vercel deployment instructions and manual checks](docs/DEPLOYMENT.md) cover environment variables, Supabase permissions, Storage cleanup limitations and verification scenarios. `vercel.json` provides SPA fallback for direct navigation and refresh on nested routes.
 
-Publishing the frontend does not establish safe database permissions. Choose a read-only or explicitly disposable editable demo before sharing it publicly. The existing app has no authentication.
+The frontend is fixed to read-only demo mode and has no authentication. Before sharing it publicly, verify that Supabase also denies public database and Storage writes; publishing the frontend does not configure those permissions.

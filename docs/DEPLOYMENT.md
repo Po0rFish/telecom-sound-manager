@@ -26,6 +26,8 @@ Access options (this demo uses the first option):
 
 Inspect existing RLS policies and grants before changing them. This repository does not contain the remote schema or policies, so it does not apply guessed SQL to an existing database.
 
+Run [`scripts/audit-supabase-access.sql`](../scripts/audit-supabase-access.sql) in the project's SQL Editor to inspect table privileges, RLS policies, callable public functions and the sounds bucket. The script only reads metadata. Its results require review; it does not certify or enforce read-only access. Review any additional exposed schemas or backend endpoints separately.
+
 Required resources: `owners` and `sounds` tables matching `src/features/*/model/dbTypes.ts`; public `sounds` Storage bucket for the current public-URL playback implementation. Public retrieval does not grant upload or deletion permissions: those operations need appropriate Storage policies.
 
 ## Audio lifecycle

@@ -15,6 +15,7 @@ let socket;
 const pending = new Map();
 let nextId = 0;
 const failures = [];
+let dataRequests = 0;
 const owner = { id: "demo-owner", name: "Demo Support", type: "User", extension: "101", created_at: "2026-01-01" };
 const baseSound = { name: "Support Voicemail", description: "Sample recording", type: "Voicemail", owner_id: owner.id, owner_type: "User", file_name: "sample.wav", format: "wav", is_active: true, moh: false, created_at: "2026-01-01" };
 const sounds = [
@@ -76,6 +77,7 @@ try {
     if (message.method === "Fetch.requestPaused") {
       const { requestId, request } = message.params;
       const url = new URL(request.url);
+      if (url.pathname.startsWith("/rest/v1/")) dataRequests++;
       if (url.hostname === "127.0.0.1") { await send("Fetch.continueRequest", { requestId }); return; }
       if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) failures.push(`Unexpected external write: ${request.method}`);
       let body = "[]";
@@ -117,6 +119,16 @@ try {
   assert.equal(await evaluate("(async () => { const [a,b] = document.querySelectorAll('audio'); await a.play(); await b.play(); return a.paused && !b.paused; })()"), true);
   await evaluate("document.querySelectorAll('audio')[1].pause()");
   await screenshot("sounds");
+  const requestsBeforeSwitch = dataRequests;
+  await evaluate(`document.querySelector('[aria-label="Switch to grid view"]').click()`);
+  await until(() => evaluate(`Boolean(document.querySelector('[aria-label="Switch to list view"]'))`), "grid view");
+  assert.equal(await evaluate("document.querySelectorAll('audio').length"), 2);
+  assert.equal(await evaluate("(async () => { const [a,b] = document.querySelectorAll('audio'); await a.play(); await b.play(); return a.paused && !b.paused; })()"), true);
+  await evaluate("document.querySelectorAll('audio')[1].pause()");
+  await screenshot("sounds-grid");
+  await evaluate(`document.querySelector('[aria-label="Switch to list view"]').click()`);
+  await until(() => evaluate(`Boolean(document.querySelector('[aria-label="Switch to grid view"]'))`), "list view");
+  assert.equal(dataRequests, requestsBeforeSwitch, "Switching views must not fetch data");
   const initialSounds = JSON.stringify(sounds);
   await navigate("/sounds/new?ownerId=demo-owner&type=Voicemail", "Create Sound");
   await evaluate("document.querySelector('form').requestSubmit()");
@@ -148,10 +160,16 @@ try {
   for (const [path, text] of [["/dashboard", "All owners"], ["/sounds", "Support Voicemail"], ["/sounds/new", "Create Sound"], ["/owners", "Demo Support"]]) {
     await navigate(path, text);
     assert.equal(await evaluate("document.documentElement.scrollWidth <= window.innerWidth"), true, `Horizontal overflow: ${path}`);
+    if (path === "/sounds") {
+      await evaluate(`document.querySelector('[aria-label="Switch to grid view"]').click()`);
+      await until(() => evaluate(`Boolean(document.querySelector('[aria-label="Switch to list view"]'))`), "mobile grid view");
+      assert.equal(await evaluate("document.documentElement.scrollWidth <= window.innerWidth"), true, "Horizontal overflow: mobile grid");
+      await screenshot("sounds-grid-mobile");
+    }
   }
   await screenshot("owners-mobile");
   assert.deepEqual(failures, []);
-  console.log("Browser smoke passed (demo): dashboard, list, blocked saves/deletes, local audio preview/removal, missing record, owners, exclusive playback, mobile overflow (mock API).");
+  console.log("Browser smoke passed (demo): dashboard, list/grid switching without refetch, blocked saves/deletes, local audio preview/removal, missing record, owners, exclusive playback in both views, mobile overflow (mock API).");
 } catch (error) {
   if (socket?.readyState === WebSocket.OPEN) {
     console.error(await evaluate("document.body.innerText"));
