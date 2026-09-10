@@ -1,5 +1,6 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Button, Stack, Typography } from '@mui/material';
+import { Alert, Button, Stack, Typography } from '@mui/material';
+import { DEMO_MESSAGE } from '../api/demoMode';
 
 import './AppLayout.scss';
 
@@ -49,6 +50,7 @@ export function AppLayout() {
         </header>
 
         <main className="app-layout__main">
+          <Alert severity="info" sx={{ mb: 2 }}>{DEMO_MESSAGE}</Alert>
           <Outlet />
         </main>
       </div>

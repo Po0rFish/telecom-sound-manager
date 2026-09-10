@@ -1,13 +1,19 @@
 import React from "react";
+import { DEMO_MESSAGE, isReadOnlyDemo } from "../../../shared/api/demoMode";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Button,
   Card,
   CardContent,
+  Grid,
+  IconButton,
   Stack,
+  Tooltip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import GridViewIcon from "@mui/icons-material/GridView";
+import ViewListIcon from "@mui/icons-material/ViewList";
 
 import { useAppDispatch } from "../../../app/store";
 
@@ -33,6 +39,10 @@ import { getSoundsEmptyMessage } from "../model/sound.emptyState";
 // import type { SoundType } from "../model/types";
 import type { OwnerSetupChecklistItem } from "../../owners/model/types";
 import SoundCardsGrid from "../components/SoundCardsGrid";
+import SoundCard from "../components/SoundCard";
+
+type ViewMode = 'list' | 'grid';
+
 export default function SoundsPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -41,6 +51,7 @@ export default function SoundsPage() {
   const initialOwnerId = searchParams.get("ownerId") || "";
 
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
+  const [viewMode, setViewMode] = React.useState<ViewMode>('list');
 
   const {
     data: sounds = [],
@@ -121,6 +132,11 @@ export default function SoundsPage() {
   }, []);
 
   const handleConfirmDelete = React.useCallback(async () => {
+    if (isReadOnlyDemo()) {
+      showInfo(dispatch, DEMO_MESSAGE);
+      setDeleteId(null);
+      return;
+    }
     if (!deleteId || deleteInProgress.current) return;
     deleteInProgress.current = true;
 
@@ -154,6 +170,15 @@ export default function SoundsPage() {
         title="Sound Manager"
         subtitle="Portfolio demo for managing audio records"
         action={
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+            <Tooltip title={viewMode === 'list' ? 'Switch to grid view' : 'Switch to list view'}>
+              <IconButton
+                aria-label={viewMode === 'list' ? 'Switch to grid view' : 'Switch to list view'}
+                onClick={() => setViewMode(prev => prev === 'list' ? 'grid' : 'list')}
+              >
+                {viewMode === 'list' ? <GridViewIcon /> : <ViewListIcon />}
+              </IconButton>
+            </Tooltip>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -161,6 +186,7 @@ export default function SoundsPage() {
           >
             New Sound
           </Button>
+          </Stack>
         }
       />
 
@@ -185,6 +211,26 @@ export default function SoundsPage() {
           <Box>
             <EmptyState message={emptyMessage} />
           </Box>
+        ) : viewMode === 'grid' ? (
+          <Grid container spacing={2}>
+            {filteredSounds.map(sound => {
+              const owner = ownerMap[sound.ownerId];
+              return (
+                <Grid key={sound.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                  <SoundCard
+                    sound={sound}
+                    ownerName={owner?.name || "Unknown owner"}
+                    ownerType={owner?.type || sound.ownerType}
+                    owner={owner}
+                    sounds={sounds}
+                    onEdit={handleEdit}
+                    onDelete={handleAskDelete}
+                    onOpenRequiredSetupItem={handleOpenRequiredSetupItem}
+                  />
+                </Grid>
+              );
+            })}
+          </Grid>
         ) : (
           <SoundCardsGrid
             sounds={filteredSounds}

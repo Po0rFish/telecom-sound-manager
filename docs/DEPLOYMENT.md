@@ -13,11 +13,15 @@ These steps prepare a deployment; no hosting account or remote project has been 
 
 ## Supabase access model
 
+The application now runs as an interactive read-only demo. Forms, buttons and local audio previews remain available. Save/delete actions show a demo notice, and the shared Supabase fetch wrapper rejects all methods except GET/HEAD before network access. This is a frontend behavior guard, not server authorization: direct API clients can bypass it.
+
+Before public deployment, deny INSERT/UPDATE/DELETE and other write privileges for browser roles on owners/sounds, and deny Storage writes for the sounds bucket through the actual project grants/policies. Review callable functions and any existing broad policies too. Remote policies have not been inspected or changed by this local implementation. Do not assume the backend is protected by the frontend guard.
+
 This application currently has no login. Browser requests use the project's public key and anonymous database permissions. A public key is expected in the browser; a secret/service-role key must never be used here.
 
-Before publishing, choose one of these modes:
+Access options (this demo uses the first option):
 
-- Public read-only demo: grant anonymous SELECT on demo owners/sounds; deny anonymous database writes and Storage uploads/deletes. The current editing controls will display API errors in this mode; a dedicated read-only UI or authentication is a separate change.
+- Public read-only demo: grant anonymous SELECT on demo owners/sounds; deny anonymous database writes and Storage uploads/deletes. Editing controls show a demo notice without submitting changes.
 - Editable demo: explicitly accept that anonymous visitors can modify the shared sample data. Use only disposable data, limited Storage file sizes/types, and a process to reset the demo. Do not connect this mode to a real customer database.
 
 Inspect existing RLS policies and grants before changing them. This repository does not contain the remote schema or policies, so it does not apply guessed SQL to an existing database.
@@ -34,7 +38,7 @@ The reference check requires visibility of all demo sound records. Do not use th
 
 - `npm ci`, `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`.
 - `node --env-file=.env.local scripts/check-supabase.mjs` checks read access and one sample audio URL without printing credentials.
-- Create a disposable sound, upload audio, play/pause/restart it, edit its name, replace and remove audio, then delete the record.
+- Open create/edit forms, select and preview local audio, and remove it locally. Save and confirm deletion: verify the demo notice, unchanged server records, and no outgoing write requests in the browser network panel.
 - Confirm only one audio plays at a time; test an unavailable URL and an unsupported audio encoding.
 - Confirm failed saves preserve the existing recording and display an error.
 - Compare dashboard counts with Owners; follow missing-setup links to create/edit forms.

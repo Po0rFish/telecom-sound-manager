@@ -8,6 +8,8 @@ Deployment URL: to be added after publishing.
 
 ## Features
 
+The public demo keeps buttons and forms interactive, but saving and deleting show a demo notice. File selection and audio removal only affect the local form. The Supabase client blocks outgoing write requests; browsing, filtering and playback remain available. Backend permissions must also deny public writes before sharing (see deployment notes).
+
 - Dashboard with audio totals, complete configurations and actionable missing-setup items.
 - Create, edit and delete sounds; filter by owner, type, name and missing audio.
 - Upload, replace and remove MP3, WAV and OGG files up to 5 MB.

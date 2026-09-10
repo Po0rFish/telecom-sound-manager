@@ -77,6 +77,7 @@ try {
       const { requestId, request } = message.params;
       const url = new URL(request.url);
       if (url.hostname === "127.0.0.1") { await send("Fetch.continueRequest", { requestId }); return; }
+      if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) failures.push(`Unexpected external write: ${request.method}`);
       let body = "[]";
       let responseCode = 200;
       let contentType = "application/json";
@@ -84,6 +85,7 @@ try {
       else if (url.pathname.endsWith("/sounds")) {
         const id = url.searchParams.get("id")?.replace("eq.", "");
         let record = sounds.find(sound => sound.id === id);
+        if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) failures.push(`Unexpected write: ${request.method}`);
         if (request.method === "POST") {
           record = { ...baseSound, ...JSON.parse(request.postData), id: "created-sound" };
           sounds.push(record);
@@ -115,41 +117,28 @@ try {
   assert.equal(await evaluate("(async () => { const [a,b] = document.querySelectorAll('audio'); await a.play(); await b.play(); return a.paused && !b.paused; })()"), true);
   await evaluate("document.querySelectorAll('audio')[1].pause()");
   await screenshot("sounds");
+  const initialSounds = JSON.stringify(sounds);
   await navigate("/sounds/new?ownerId=demo-owner&type=Voicemail", "Create Sound");
-  assert.equal(await evaluate("document.querySelectorAll('audio').length"), 0);
   await evaluate("document.querySelector('form').requestSubmit()");
-  await until(() => evaluate("document.body.innerText.includes('Name is required')"), "form validation");
-  await evaluate("(() => { const input = document.querySelector('input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'Created Demo'); input.dispatchEvent(new Event('input', { bubbles: true })); })()");
+  await until(() => evaluate("document.querySelector('[role=alert]')?.textContent.includes('Demo version')"), "demo notice");
+  assert.equal(await evaluate("location.pathname"), "/sounds/new");
   const fixtureFile = join(profile, "sample.wav");
   await writeFile(fixtureFile, wav);
   const documentNode = await send("DOM.getDocument");
   const fileInput = await send("DOM.querySelector", { nodeId: documentNode.root.nodeId, selector: "input[type=file]" });
   await send("DOM.setFileInputFiles", { nodeId: fileInput.nodeId, files: [fixtureFile] });
-  await until(() => evaluate("document.querySelectorAll('audio').length === 1"), "upload preview");
+  await until(() => evaluate("document.querySelectorAll('audio').length === 1"), "local audio preview");
   await evaluate("document.querySelector('form').requestSubmit()");
-  await until(() => evaluate("location.pathname === '/sounds' && document.body.innerText.includes('Created Demo')"), "create with audio");
-  assert.ok(sounds.find(sound => sound.id === "created-sound")?.audio_url);
-  await navigate("/sounds/created-sound", "Edit Sound");
-  const previousAudio = sounds.find(sound => sound.id === "created-sound").audio_url;
-  const editDocument = await send("DOM.getDocument");
-  const editFileInput = await send("DOM.querySelector", { nodeId: editDocument.root.nodeId, selector: "input[type=file]" });
-  await send("DOM.setFileInputFiles", { nodeId: editFileInput.nodeId, files: [fixtureFile] });
-  await until(() => evaluate("document.body.innerText.includes('New file selected')"), "replacement preview");
-  await evaluate("(() => { const input = document.querySelector('input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'Updated Demo'); input.dispatchEvent(new Event('input', { bubbles: true })); })()");
-  await evaluate("document.querySelector('form').requestSubmit()");
-  await until(() => evaluate("location.pathname === '/sounds' && document.body.innerText.includes('Updated Demo')"), "edit");
-  assert.notEqual(sounds.find(sound => sound.id === "created-sound").audio_url, previousAudio);
-  await navigate("/sounds/created-sound", "Edit Sound");
+  await navigate("/sounds/demo-sound", "Edit Sound");
   await evaluate("Array.from(document.querySelectorAll('button')).find(button => button.textContent === 'Remove').click()");
-  await until(() => evaluate("document.querySelectorAll('audio').length === 0"), "remove preview");
+  assert.equal(await evaluate("document.querySelectorAll('audio').length"), 0);
   await evaluate("document.querySelector('form').requestSubmit()");
-  await until(() => evaluate("location.pathname === '/sounds' && document.body.innerText.includes('Updated Demo')"), "save without audio");
-  assert.equal(sounds.find(sound => sound.id === "created-sound").audio_url, null);
-  assert.equal(sounds.find(sound => sound.id === "created-sound").is_active, false);
-  await evaluate("document.querySelector('[aria-label=\"Delete Updated Demo\"]').click()");
+  assert.equal(await evaluate("location.pathname"), "/sounds/demo-sound");
+  await navigate("/sounds", "Support Voicemail");
+  await evaluate(`document.querySelector('[aria-label="Delete Support Voicemail"]').click()`);
   await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).find(button => button.textContent === 'Delete').click()");
-  await until(() => evaluate("!document.body.innerText.includes('Updated Demo') && !document.querySelector('[role=dialog]')"), "delete");
-  assert.equal(sounds.some(sound => sound.id === "created-sound"), false);
+  await until(() => evaluate("!document.querySelector('[role=dialog]')"), "demo delete dismissed");
+  assert.equal(JSON.stringify(sounds), initialSounds);
   await navigate("/sounds/demo-sound", "Edit Sound");
   assert.equal(await evaluate("document.querySelectorAll('audio').length"), 1);
   await screenshot("edit-sound");
@@ -162,7 +151,7 @@ try {
   }
   await screenshot("owners-mobile");
   assert.deepEqual(failures, []);
-  console.log("Browser smoke passed: dashboard, list, validation, upload/create, replace/remove audio, edit/delete, missing record, owners, exclusive playback, mobile overflow (mock API).");
+  console.log("Browser smoke passed (demo): dashboard, list, blocked saves/deletes, local audio preview/removal, missing record, owners, exclusive playback, mobile overflow (mock API).");
 } catch (error) {
   if (socket?.readyState === WebSocket.OPEN) {
     console.error(await evaluate("document.body.innerText"));
