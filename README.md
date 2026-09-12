@@ -1,6 +1,6 @@
 # Telecom Sound Manager
 
-An interactive portfolio application for managing telecom audio records and checking required audio configuration for companies, departments, queues and users.
+A React / TypeScript portfolio application for telecom audio management across companies, departments, queues and users. It models greetings, announcements, voicemail and music on hold, with required sound configuration and readiness checks for each owner.
 
 ## Live Demo
 
@@ -13,25 +13,29 @@ No account, installation or backend setup is needed. Create, edit and delete sou
 - Sound creation, editing and deletion with owner/type/search and missing-audio filters.
 - MP3, WAV and OGG uploads up to 5 MB each, with a 50 MB total demo audio limit.
 - Audio previews, restart controls and one active player at a time.
-- Dashboard and owner checklists derived from active recordings and required sound types.
+- Dashboard and owner checklists distinguish ready, incomplete, missing-audio and inactive configurations.
 - Inactive drafts for records without audio, and cleanup of unused local audio.
 - Responsive list/grid views and forms.
 - Persistent browser data and **Reset Demo** to restore the original samples.
 
 Phone recording is a simulation. Owner management, authentication and a real telephone connection are not implemented. The bundled audio is a generated test tone.
 
-Data is stored in IndexedDB on this browser and site origin. Reloading preserves saved changes, but clearing site data, browser eviction or ending a private-browsing session can remove them. Unsaved form edits are not persisted. Visitors and browser profiles have independent data; this demo is not a backup service.
+Saved changes survive page refresh in the same browser. See [storage behavior and limitations](docs/DEPLOYMENT.md#browser-data).
 
 ## Screenshots
 
 ![Dashboard](docs/screenshots/dashboard.png)
 ![Sounds with audio previews](docs/screenshots/sounds.png)
 
-[Grid](docs/screenshots/sounds-grid.png) ? [Mobile grid](docs/screenshots/sounds-grid-mobile.png) ? [Edit form](docs/screenshots/edit-sound.png) ? [Owners on mobile](docs/screenshots/owners-mobile.png)
+[Grid](docs/screenshots/sounds-grid.png) | [Mobile grid](docs/screenshots/sounds-grid-mobile.png) | [Edit form](docs/screenshots/edit-sound.png) | [Owners on mobile](docs/screenshots/owners-mobile.png)
 
 ## Tech stack
 
 React 19, TypeScript, Vite, Material UI, Sass, Redux Toolkit / RTK Query, React Router and IndexedDB. A separate Supabase Database / Storage integration remains in the source. Tests use the Node.js test runner and a Chromium browser smoke script.
+
+## AI-assisted development
+
+The project was developed iteratively with AI coding assistance for implementation and refactoring proposals. Architecture decisions, telecom domain rules, code review, testing and final validation remain developer-controlled.
 
 ## Local setup
 

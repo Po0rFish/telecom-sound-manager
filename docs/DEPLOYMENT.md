@@ -14,7 +14,7 @@ These repository changes do not change Vercel environment settings or remote Sup
 
 The first data query initializes IndexedDB with fictional owners, sounds and a generated WAV tone. Audio uploads are stored as Blobs, never sent to a backend. The per-file limit is 5 MB; stored demo audio is capped at 50 MB. Browser quotas may be lower, and storage failures are reported to the user.
 
-Reset Demo asks for confirmation, atomically replaces saved records and audio, and reloads the Sounds page to clear forms, playback URLs and query caches. Clearing browser site data also starts a fresh demo. Data is scoped to a browser profile and origin; it is not synced across devices. Private browsing and browser storage eviction can discard data.
+Reset Demo asks for confirmation, atomically replaces saved records and audio, and reloads the Sounds page to clear forms, playback URLs and query caches. Clearing browser site data also starts a fresh demo. Data is scoped to a browser profile and origin; it is not synced across devices. Private browsing and browser storage eviction can discard data. Unsaved form edits are not persisted. This demo is not a backup service.
 
 ## Optional Supabase read-only mode
 
