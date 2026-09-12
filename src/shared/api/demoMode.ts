@@ -1,7 +1,4 @@
-export const DEMO_MESSAGE = "Demo version: changes are not saved. You can explore the forms and preview audio locally.";
-
-// Fixed for this public demo; no browser setting enables writes.
-export const isReadOnlyDemo = () => true;
+export const DEMO_MESSAGE = "Supabase preview is read-only. Changes are not saved in this mode.";
 
 export function createDemoFetch(networkFetch: typeof fetch): typeof fetch {
   return async (input, init) => {

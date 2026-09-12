@@ -1,6 +1,7 @@
 import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
 
-import { supabase } from "../../../shared/api/supabase";
+import { browserDemo } from "../../../shared/api/browserDemo";
+import { isBrowserDemo } from "../../../shared/api/dataSource";
 import { removeUnusedSoundFile } from "../soundStorageApi";
 
 import type { Owner } from "../../owners/model/types";
@@ -42,6 +43,8 @@ export const soundsApiSlice = createApi({
     getOwners: builder.query<Owner[], void>({
       async queryFn() {
         try {
+          if (isBrowserDemo) return { data: await browserDemo.getOwners() };
+          const { supabase } = await import("../../../shared/api/supabase");
           const { data, error } = await supabase
             .from("owners")
             .select("*")
@@ -65,6 +68,8 @@ export const soundsApiSlice = createApi({
     getSounds: builder.query<Sound[], void>({
       async queryFn() {
         try {
+          if (isBrowserDemo) return { data: await browserDemo.getSounds() };
+          const { supabase } = await import("../../../shared/api/supabase");
           const { data, error } = await supabase
             .from("sounds")
             .select("*")
@@ -97,6 +102,8 @@ export const soundsApiSlice = createApi({
     getSoundById: builder.query<Sound, string>({
       async queryFn(id) {
         try {
+          if (isBrowserDemo) return { data: await browserDemo.getSound(id) };
+          const { supabase } = await import("../../../shared/api/supabase");
           const { data, error } = await supabase
             .from("sounds")
             .select("*")
@@ -126,6 +133,8 @@ export const soundsApiSlice = createApi({
     createSound: builder.mutation<Sound, SoundFormPayload>({
       async queryFn(payload) {
         try {
+          if (isBrowserDemo) return { data: await browserDemo.save(payload) };
+          const { supabase } = await import("../../../shared/api/supabase");
           const { data, error } = await supabase
             .from("sounds")
             .insert(
@@ -159,6 +168,8 @@ export const soundsApiSlice = createApi({
     updateSound: builder.mutation<Sound, UpdateSoundArgs>({
       async queryFn({ id, payload }) {
         try {
+          if (isBrowserDemo) return { data: await browserDemo.save(payload, id) };
+          const { supabase } = await import("../../../shared/api/supabase");
           const { data, error } = await supabase
             .from("sounds")
             .update(mapSoundPayloadToRow(payload))
@@ -193,6 +204,8 @@ export const soundsApiSlice = createApi({
     deleteSound: builder.mutation<{ id: string; warning?: string }, string>({
       async queryFn(id) {
         try {
+          if (isBrowserDemo) return { data: await browserDemo.deleteSound(id) };
+          const { supabase } = await import("../../../shared/api/supabase");
           const { data, error } = await supabase
             .from("sounds")
             .delete()

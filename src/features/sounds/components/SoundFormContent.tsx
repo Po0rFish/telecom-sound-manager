@@ -1,3 +1,4 @@
+import { isBrowserDemo } from "../../../shared/api/dataSource";
 import {
   useState,
   useRef,
@@ -43,7 +44,7 @@ import type { FormState } from "../model/formTypes";
 import { getRtkQueryErrorMessage } from "../../../shared/utils/getRtkQueryErrorMessage";
 import { saveSoundWithAudio } from "../model/saveSoundWithAudio";
 import { uploadSoundFile, removeUnusedSoundFile } from "../soundStorageApi";
-import { DEMO_MESSAGE, isReadOnlyDemo } from "../../../shared/api/demoMode";
+import { DEMO_MESSAGE } from "../../../shared/api/demoMode";
 
 interface SoundFormContentProps {
   readonly initialValues: FormState;
@@ -94,7 +95,7 @@ export default function SoundFormContent({
   };
 
   const handleRecordViaPhone = () => {
-    if (isReadOnlyDemo()) {
+    if (!isBrowserDemo) {
       showInfo(dispatch, DEMO_MESSAGE);
       return;
     }
@@ -104,7 +105,7 @@ export default function SoundFormContent({
 
     showInfo(
       dispatch,
-      `Simulation started. Dial ${dialCode} from your phone to record this sound.`
+      `Simulation only: ${dialCode} is a demo code. No phone connection or recording is started.`
     );
   };
 
@@ -112,7 +113,7 @@ export default function SoundFormContent({
     event: ChangeEvent<HTMLInputElement>
   ) => {
     const result = handleFileChange(event.target.files?.[0]);
-    if (result.ok) showInfo(dispatch, DEMO_MESSAGE);
+    if (result.ok && !isBrowserDemo) showInfo(dispatch, DEMO_MESSAGE);
 
     if (!result.ok && result.error) {
       showError(dispatch, result.error);
@@ -123,7 +124,7 @@ export default function SoundFormContent({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isReadOnlyDemo()) {
+    if (!isBrowserDemo) {
       showInfo(dispatch, DEMO_MESSAGE);
       return;
     }
@@ -202,7 +203,7 @@ export default function SoundFormContent({
               <SoundAudioSection
                 form={form}
                 onFileChange={handleFileInputChange}
-                onRemoveFile={() => { removeFile(); showInfo(dispatch, DEMO_MESSAGE); }}
+                onRemoveFile={removeFile}
               />
 
               <SoundStatusField

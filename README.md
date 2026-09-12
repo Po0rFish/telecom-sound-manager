@@ -1,100 +1,72 @@
-﻿# Telecom Sound Manager
+# Telecom Sound Manager
 
-A portfolio React application for managing telecom audio records and checking whether companies, departments, queues and users have their required audio configured. This is a demonstration project, not a connected telephone system.
+An interactive portfolio application for managing telecom audio records and checking required audio configuration for companies, departments, queues and users.
 
 ## Live Demo
 
-Deployment URL: to be added after publishing.
+[Open the demo](https://telecom-sound-manager.vercel.app)
+
+No account, installation or backend setup is needed. Create, edit and delete sounds, upload audio and explore the dashboard. Changes and audio stay in your browser; the public demo makes no requests to Supabase.
 
 ## Features
 
-The public demo keeps buttons and forms interactive, but saving and deleting show a demo notice. File selection and audio removal only affect the local form. The Supabase client blocks outgoing write requests; browsing, filtering and playback remain available. Backend permissions must also deny public writes before sharing (see deployment notes).
+- Sound creation, editing and deletion with owner/type/search and missing-audio filters.
+- MP3, WAV and OGG uploads up to 5 MB each, with a 50 MB total demo audio limit.
+- Audio previews, restart controls and one active player at a time.
+- Dashboard and owner checklists derived from active recordings and required sound types.
+- Inactive drafts for records without audio, and cleanup of unused local audio.
+- Responsive list/grid views and forms.
+- Persistent browser data and **Reset Demo** to restore the original samples.
 
-- Dashboard with audio totals, complete configurations and actionable missing-setup items.
-- Create, edit and delete sounds; filter by owner, type, name and missing audio.
-- Upload, replace and remove MP3, WAV and OGG files up to 5 MB.
-- Audio preview in cards and forms with native playback controls, restart, error feedback and one active player at a time.
-- Owner setup checklists: required sounds must exist, contain audio and be active.
-- Automatic inactive drafts for records without audio.
-- Storage cleanup after replacement/deletion and failed saves, with separate cleanup warnings.
-- Responsive layout and shared notifications, loading and error states.
-- Switch between the default sound view and a responsive grid using the same filters and audio controls.
+Phone recording is a simulation. Owner management, authentication and a real telephone connection are not implemented. The bundled audio is a generated test tone.
 
-Phone recording is a UI simulation; displayed dial codes do not connect to a PBX. Owner management and authentication are not implemented.
+Data is stored in IndexedDB on this browser and site origin. Reloading preserves saved changes, but clearing site data, browser eviction or ending a private-browsing session can remove them. Unsaved form edits are not persisted. Visitors and browser profiles have independent data; this demo is not a backup service.
 
 ## Screenshots
 
-The browser smoke script generates screenshots using synthetic demo records:
-
 ![Dashboard](docs/screenshots/dashboard.png)
-![Sound list with audio previews](docs/screenshots/sounds.png)
+![Sounds with audio previews](docs/screenshots/sounds.png)
 
-[Grid view](docs/screenshots/sounds-grid.png) · [Mobile grid](docs/screenshots/sounds-grid-mobile.png) · [Edit form](docs/screenshots/edit-sound.png) · [Mobile Owners page](docs/screenshots/owners-mobile.png)
+[Grid](docs/screenshots/sounds-grid.png) ? [Mobile grid](docs/screenshots/sounds-grid-mobile.png) ? [Edit form](docs/screenshots/edit-sound.png) ? [Owners on mobile](docs/screenshots/owners-mobile.png)
 
-## Stack
+## Tech stack
 
-React 19, TypeScript (strict), Vite, Material UI, Sass, Redux Toolkit / RTK Query, React Router and Supabase Database / Storage. Tests use the Node.js test runner without additional dependencies.
+React 19, TypeScript, Vite, Material UI, Sass, Redux Toolkit / RTK Query, React Router and IndexedDB. A separate Supabase Database / Storage integration remains in the source. Tests use the Node.js test runner and a Chromium browser smoke script.
 
 ## Local setup
 
 Use Node.js 22.18+ (Node.js 24 recommended).
 
 ```sh
+git clone https://github.com/Po0rFish/telecom-sound-manager.git
+cd telecom-sound-manager
 npm ci
-```
-
-Copy `.env.example` to `.env.local` and fill in your demo project's public configuration:
-
-```dotenv
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-```
-
-Never put a secret/service-role key in a `VITE_` variable: these values are included in the browser build. Local environment files are ignored by Git.
-
-```sh
 npm run dev
 ```
 
-Open the address printed by Vite, usually http://localhost:5173. In Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`. Restart Vite after changing environment variables.
-
-The app requires existing `owners` and `sounds` tables matching the database types in `src/features/*/model/dbTypes.ts`, and a public `sounds` Storage bucket. This repository does not yet provide database migrations or seed SQL. Configure table and Storage access in your dedicated Supabase demo project; see [deployment notes](docs/DEPLOYMENT.md).
-
-## Commands
-
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Development server |
-| `npm test` | Domain and audio-save regression tests |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | TypeScript project checks |
-| `npm run build` | TypeScript checks and production build |
-| `npm run preview` | Preview `dist` locally |
-| `node --env-file=.env.local scripts/check-supabase.mjs` | Read-only API connectivity check |
-| `node scripts/browser-smoke.mjs` | Browser checks with synthetic API fixtures; run after build |
-
-Browser checks use an installed Chrome at its default Windows path. Set `BROWSER_PATH` for another Chromium executable. They intercept external requests, never write to Supabase, and save screenshots under `docs/screenshots`. They need permission to launch a headless browser and bind a local preview port.
+Open the URL printed by Vite. No environment file, Supabase account or Docker is required for the browser demo. In Windows PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`.
 
 ## Architecture
 
-```text
-src/
-  app/                    Routing, store, theme and UI state
-  features/
-    dashboard/            Derived overview and missing-setup navigation
-    owners/               Owner views and required-audio business rules
-    sounds/               Forms, validation, API, mapping and Storage operations
-  shared/
-    api/                  Supabase client
-    layout/               Application navigation and layout
-    ui/                   Reusable presentation components and audio player
-    utils/                Error extraction
-```
+- `src/app`: routing, Redux store and theme.
+- `src/features`: sound forms, queries, validation and owner configuration rules.
+- `src/shared/api/browserDemo.ts`: IndexedDB records, audio storage and reset.
+- `src/shared/api/demoSeed.ts`: fictional fixtures and generated WAV sample.
+- `src/shared/ui`: reusable components and audio playback.
 
-Forms, domain objects and database rows are separate models. Mappers translate between them. RTK Query caches owner/sound queries across pages. Dashboard statistics reuse the same owner-setup rules as the Owners page.
+RTK Query provides the same interface to the UI for browser data and the optional Supabase read-only integration. Browser audio is stored as Blobs with durable IDs; playback URLs are recreated after reload. The Supabase client is loaded only when its build-time mode is selected.
 
-## Deployment and verification
+## Validation
 
-[Vercel deployment instructions and manual checks](docs/DEPLOYMENT.md) cover environment variables, Supabase permissions, Storage cleanup limitations and verification scenarios. `vercel.json` provides SPA fallback for direct navigation and refresh on nested routes.
+| Command | Purpose |
+| --- | --- |
+| `npm test` | Domain, audio-save and remote-write-guard regression tests |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript checks |
+| `npm run build` | TypeScript checks and production build |
+| `npm run preview` | Preview the production build |
+| `node scripts/browser-smoke.mjs` | After build: actual IndexedDB CRUD, persistence, audio, reset and responsive UI checks |
 
-The frontend is fixed to read-only demo mode and has no authentication. Before sharing it publicly, verify that Supabase also denies public database and Storage writes; publishing the frontend does not configure those permissions.
+The browser smoke script uses Chrome at its default Windows path; set `BROWSER_PATH` for another Chromium executable. It uses a fresh profile, rejects external requests and refreshes screenshots under `docs/screenshots`.
+
+See [deployment and optional Supabase setup](docs/DEPLOYMENT.md) for hosting configuration and integration limitations.

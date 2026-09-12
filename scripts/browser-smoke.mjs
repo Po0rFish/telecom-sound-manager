@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 // Uses an installed Chromium browser; no application/test dependencies are downloaded.
-// All external requests are intercepted. Fixtures never modify the remote database.
+// External requests fail the test. Exercises real IndexedDB in an isolated browser profile.
 const browserPath = process.env.BROWSER_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const profile = await mkdtemp(join(tmpdir(), "sound-manager-browser-"));
 const server = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "preview", "--host", "127.0.0.1", "--port", "4178", "--strictPort"], { windowsHide: true, stdio: "ignore" });
@@ -15,13 +15,6 @@ let socket;
 const pending = new Map();
 let nextId = 0;
 const failures = [];
-let dataRequests = 0;
-const owner = { id: "demo-owner", name: "Demo Support", type: "User", extension: "101", created_at: "2026-01-01" };
-const baseSound = { name: "Support Voicemail", description: "Sample recording", type: "Voicemail", owner_id: owner.id, owner_type: "User", file_name: "sample.wav", format: "wav", is_active: true, moh: false, created_at: "2026-01-01" };
-const sounds = [
-  { ...baseSound, id: "demo-sound", audio_url: "https://audio.example/sample.wav" },
-  { ...baseSound, id: "second-sound", name: "Second Recording", audio_url: "https://audio.example/second.wav" },
-];
 const wav = Buffer.alloc(44 + 16000);
 wav.write("RIFF"); wav.writeUInt32LE(wav.length - 8, 4); wav.write("WAVEfmt ", 8);
 wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22);
@@ -77,49 +70,26 @@ try {
     if (message.method === "Fetch.requestPaused") {
       const { requestId, request } = message.params;
       const url = new URL(request.url);
-      if (url.pathname.startsWith("/rest/v1/")) dataRequests++;
-      if (url.hostname === "127.0.0.1") { await send("Fetch.continueRequest", { requestId }); return; }
-      if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) failures.push(`Unexpected external write: ${request.method}`);
-      let body = "[]";
-      let responseCode = 200;
-      let contentType = "application/json";
-      if (url.pathname.endsWith("/owners")) body = JSON.stringify([owner]);
-      else if (url.pathname.endsWith("/sounds")) {
-        const id = url.searchParams.get("id")?.replace("eq.", "");
-        let record = sounds.find(sound => sound.id === id);
-        if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) failures.push(`Unexpected write: ${request.method}`);
-        if (request.method === "POST") {
-          record = { ...baseSound, ...JSON.parse(request.postData), id: "created-sound" };
-          sounds.push(record);
-        }
-        if (request.method === "PATCH" && record) Object.assign(record, JSON.parse(request.postData));
-        if (request.method === "DELETE" && record) sounds.splice(sounds.indexOf(record), 1);
-        if (id && !record) { responseCode = 406; body = JSON.stringify({ message: "Sound not found" }); }
-        else body = JSON.stringify(id || request.method === "POST" ? record : sounds);
-      } else if (url.pathname.startsWith("/storage/v1/object/public/sounds/") || url.hostname === "audio.example") { body = wav; contentType = "audio/wav"; }
-      else if (url.pathname.startsWith("/storage/v1/object/sounds")) body = JSON.stringify({ Key: url.pathname, Id: "uploaded" });
-      else { responseCode = 404; }
-      if (request.method === "OPTIONS") { responseCode = 200; body = ""; }
-      await send("Fetch.fulfillRequest", { requestId, responseCode, responseHeaders: [
-        { name: "Content-Type", value: contentType }, { name: "Access-Control-Allow-Origin", value: "*" },
-        { name: "Access-Control-Allow-Headers", value: Object.entries(request.headers).find(([name]) => name.toLowerCase() === "access-control-request-headers")?.[1] || "apikey,authorization,x-client-info,content-type,prefer,accept-profile,content-profile,range,x-upsert,cache-control" },
-        { name: "Access-Control-Allow-Methods", value: "GET,HEAD,POST,PATCH,DELETE,OPTIONS" },
-        { name: "Content-Range", value: "*/0" }, { name: "Access-Control-Expose-Headers", value: "Content-Range" },
-      ], body: Buffer.from(body).toString("base64") });
+      if (url.hostname === "127.0.0.1" || url.protocol === "blob:" || url.protocol === "data:") {
+        await send("Fetch.continueRequest", { requestId });
+      } else {
+        failures.push(`Unexpected external request: ${url.origin}`);
+        await send("Fetch.failRequest", { requestId, errorReason: "BlockedByClient" });
+      }
     }
   });
   await send("Runtime.enable");
   await send("Page.enable");
   await send("Fetch.enable", { patterns: [{ urlPattern: "*" }] });
   await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
-  await navigate("/dashboard", "All owners have their required audio ready");
+  await navigate("/dashboard", "Missing audio");
   await screenshot("dashboard");
   await navigate("/sounds", "Support Voicemail");
   assert.equal(await evaluate("document.querySelectorAll('audio').length"), 2);
   assert.equal(await evaluate("(async () => { const [a,b] = document.querySelectorAll('audio'); await a.play(); await b.play(); return a.paused && !b.paused; })()"), true);
   await evaluate("document.querySelectorAll('audio')[1].pause()");
   await screenshot("sounds");
-  const requestsBeforeSwitch = dataRequests;
+
   await evaluate(`document.querySelector('[aria-label="Switch to grid view"]').click()`);
   await until(() => evaluate(`Boolean(document.querySelector('[aria-label="Switch to list view"]'))`), "grid view");
   assert.equal(await evaluate("document.querySelectorAll('audio').length"), 2);
@@ -128,36 +98,81 @@ try {
   await screenshot("sounds-grid");
   await evaluate(`document.querySelector('[aria-label="Switch to list view"]').click()`);
   await until(() => evaluate(`Boolean(document.querySelector('[aria-label="Switch to grid view"]'))`), "list view");
-  assert.equal(dataRequests, requestsBeforeSwitch, "Switching views must not fetch data");
-  const initialSounds = JSON.stringify(sounds);
-  await navigate("/sounds/new?ownerId=demo-owner&type=Voicemail", "Create Sound");
+
+  // Create with a real file, then reload to verify metadata AND Blob persistence.
+  await navigate("/sounds/new?ownerId=demo-user&type=Voicemail", "Create Sound");
   await evaluate("document.querySelector('form').requestSubmit()");
-  await until(() => evaluate("document.querySelector('[role=alert]')?.textContent.includes('Demo version')"), "demo notice");
-  assert.equal(await evaluate("location.pathname"), "/sounds/new");
+  assert.equal(await evaluate("location.pathname"), "/sounds/new", "Invalid form must not save");
+  await evaluate(`(() => { const input = document.querySelector('form input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'Created in browser'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
   const fixtureFile = join(profile, "sample.wav");
   await writeFile(fixtureFile, wav);
   const documentNode = await send("DOM.getDocument");
   const fileInput = await send("DOM.querySelector", { nodeId: documentNode.root.nodeId, selector: "input[type=file]" });
   await send("DOM.setFileInputFiles", { nodeId: fileInput.nodeId, files: [fixtureFile] });
-  await until(() => evaluate("document.querySelectorAll('audio').length === 1"), "local audio preview");
+  await until(() => evaluate("document.querySelectorAll('audio').length === 1"), "local preview");
   await evaluate("document.querySelector('form').requestSubmit()");
-  await navigate("/sounds/demo-sound", "Edit Sound");
+  await until(() => evaluate("location.pathname === '/sounds'"), "create saved");
+  await navigate("/sounds", "Created in browser");
+  assert.equal(await evaluate("document.querySelectorAll('audio').length"), 3);
+  await evaluate(`document.querySelector('[aria-label="Edit Created in browser"]').click()`);
+  await until(() => evaluate("document.body.innerText.includes('Edit Sound')"), "edit created sound");
+  const createdPath = await evaluate("location.pathname");
+  assert.equal(await evaluate("(async () => { const audio = document.querySelector('audio'); await audio.play(); audio.pause(); return audio.duration > 0; })()"), true);
+  // Metadata-only edit must retain usable audio after the form unmounts.
+  await evaluate(`(() => { const input = document.querySelector('form input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'Edited in browser'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+  await evaluate("document.querySelector('form').requestSubmit()");
+  await until(() => evaluate("location.pathname === '/sounds' && document.body.innerText.includes('Edited in browser')"), "edit saved");
+  assert.equal(await evaluate("(async () => { const audio = document.querySelector('[aria-label=\"Preview Edited in browser\"]'); await audio.play(); audio.pause(); return true; })()"), true);
+  await navigate(createdPath, "Edit Sound");
   await evaluate("Array.from(document.querySelectorAll('button')).find(button => button.textContent === 'Remove').click()");
   assert.equal(await evaluate("document.querySelectorAll('audio').length"), 0);
   await evaluate("document.querySelector('form').requestSubmit()");
-  assert.equal(await evaluate("location.pathname"), "/sounds/demo-sound");
+  await until(() => evaluate("location.pathname === '/sounds'"), "audio removal saved");
+  await navigate(createdPath, "Edit Sound");
+  assert.equal(await evaluate("document.querySelectorAll('audio').length"), 0);
+  await navigate("/sounds", "Edited in browser");
+  await evaluate(`document.querySelector('[aria-label="Delete Edited in browser"]').click()`);
+  await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).find(button => button.textContent === 'Delete').click()");
+  await until(() => evaluate("!document.body.innerText.includes('Edited in browser')"), "deleted");
+  await navigate(createdPath, "Sound not found");
+  await navigate("/sounds/demo-voicemail", "Edit Sound");
+  assert.equal(await evaluate("document.querySelectorAll('audio').length"), 1);
+  await screenshot("edit-sound");
   await navigate("/sounds", "Support Voicemail");
   await evaluate(`document.querySelector('[aria-label="Delete Support Voicemail"]').click()`);
   await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).find(button => button.textContent === 'Delete').click()");
-  await until(() => evaluate("!document.querySelector('[role=dialog]')"), "demo delete dismissed");
-  assert.equal(JSON.stringify(sounds), initialSounds);
-  await navigate("/sounds/demo-sound", "Edit Sound");
-  assert.equal(await evaluate("document.querySelectorAll('audio').length"), 1);
-  await screenshot("edit-sound");
+  await until(() => evaluate("!document.body.innerText.includes('Support Voicemail')"), "seed deleted");
+  // Shared sample audio must survive deletion of one reference.
+  assert.equal(await evaluate("(async () => { const audio = document.querySelector('audio'); await audio.play(); audio.pause(); return true; })()"), true);
+  // Replace the remaining sample with an uploaded Blob before reset.
+  await navigate("/sounds/demo-greeting", "Edit Sound");
+  const replacementDocument = await send("DOM.getDocument");
+  const replacementInput = await send("DOM.querySelector", { nodeId: replacementDocument.root.nodeId, selector: "input[type=file]" });
+  await send("DOM.setFileInputFiles", { nodeId: replacementInput.nodeId, files: [fixtureFile] });
+  await until(() => evaluate("document.body.innerText.includes('sample.wav')"), "replacement selected");
+  await evaluate("document.querySelector('form').requestSubmit()");
+  await until(() => evaluate("location.pathname === '/sounds'"), "replacement saved");
+  await navigate("/sounds/demo-greeting", "Edit Sound");
+  assert.equal(await evaluate("(async () => { const audio = document.querySelector('audio'); await audio.play(); audio.pause(); return audio.duration; })()"), 1);
+  await evaluate("Array.from(document.querySelectorAll('button')).find(button => button.textContent === 'Reset Demo').click()");
+  await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).find(button => button.textContent === 'Reset Demo').click()");
+  await until(async () => { try { return await evaluate("document.body.innerText.includes('Support Voicemail') && !document.querySelector('[role=dialog]')"); } catch { return false; } }, "reset restored seed");
+  assert.equal(await evaluate("document.querySelectorAll('audio').length"), 2);
+  assert.deepEqual(await evaluate(`new Promise((resolve, reject) => {
+    const opening = indexedDB.open('telecom-sound-manager-demo', 1);
+    opening.onerror = () => reject(opening.error);
+    opening.onsuccess = () => {
+      const db = opening.result;
+      const tx = db.transaction(['sounds', 'audio'], 'readonly');
+      const sounds = tx.objectStore('sounds').getAll();
+      const audio = tx.objectStore('audio').getAllKeys();
+      tx.oncomplete = () => { resolve({ sounds: sounds.result.length, audio: audio.result }); db.close(); };
+    };
+  })`), { sounds: 3, audio: ['demo-audio:sample'] }, "Reset removes uploaded Blobs and restores exactly the seed");
   await navigate("/sounds/missing", "Sound not found");
   await navigate("/owners", "Demo Support");
   await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
-  for (const [path, text] of [["/dashboard", "All owners"], ["/sounds", "Support Voicemail"], ["/sounds/new", "Create Sound"], ["/owners", "Demo Support"]]) {
+  for (const [path, text] of [["/dashboard", "Missing audio"], ["/sounds", "Support Voicemail"], ["/sounds/new", "Create Sound"], ["/owners", "Demo Support"]]) {
     await navigate(path, text);
     assert.equal(await evaluate("document.documentElement.scrollWidth <= window.innerWidth"), true, `Horizontal overflow: ${path}`);
     if (path === "/sounds") {
@@ -169,7 +184,7 @@ try {
   }
   await screenshot("owners-mobile");
   assert.deepEqual(failures, []);
-  console.log("Browser smoke passed (demo): dashboard, list/grid switching without refetch, blocked saves/deletes, local audio preview/removal, missing record, owners, exclusive playback in both views, mobile overflow (mock API).");
+  console.log("Browser smoke passed: real IndexedDB CRUD, Blob persistence after reload, playback, audio removal, shared-file cleanup, reset, dashboard, list/grid, mobile layouts, and zero external requests.");
 } catch (error) {
   if (socket?.readyState === WebSocket.OPEN) {
     console.error(await evaluate("document.body.innerText"));

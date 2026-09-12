@@ -1,7 +1,10 @@
-import { supabase } from "../../shared/api/supabase";
+import { browserDemo } from "../../shared/api/browserDemo";
+import { isBrowserDemo } from "../../shared/api/dataSource";
 import { getManagedSoundPath } from "./model/storagePath";
 
 export const uploadSoundFile = async (file: File) => {
+  if (isBrowserDemo) return browserDemo.upload(file);
+  const { supabase } = await import("../../shared/api/supabase");
   if (file.size === 0) {
     throw new Error("File is empty");
   }
@@ -26,6 +29,8 @@ export const uploadSoundFile = async (file: File) => {
 };
 
 export const removeUnusedSoundFile = async (audioUrl: string) => {
+  if (isBrowserDemo) return browserDemo.cleanup(audioUrl);
+  const { supabase } = await import("../../shared/api/supabase");
   const path = getManagedSoundPath(audioUrl, import.meta.env.VITE_SUPABASE_URL);
   if (!path) return;
   const { count, error: referenceError } = await supabase

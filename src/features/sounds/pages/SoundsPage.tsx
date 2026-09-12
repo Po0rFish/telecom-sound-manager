@@ -1,5 +1,6 @@
+import { isBrowserDemo } from "../../../shared/api/dataSource";
 import React from "react";
-import { DEMO_MESSAGE, isReadOnlyDemo } from "../../../shared/api/demoMode";
+import { DEMO_MESSAGE } from "../../../shared/api/demoMode";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
@@ -132,7 +133,7 @@ export default function SoundsPage() {
   }, []);
 
   const handleConfirmDelete = React.useCallback(async () => {
-    if (isReadOnlyDemo()) {
+    if (!isBrowserDemo) {
       showInfo(dispatch, DEMO_MESSAGE);
       setDeleteId(null);
       return;

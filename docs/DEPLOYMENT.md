@@ -1,49 +1,43 @@
-# Demo deployment
+# Deployment and optional Supabase integration
 
-## Vercel
+## Public browser demo on Vercel
 
-1. Import `Po0rFish/telecom-sound-manager` into Vercel, select the Vite preset, use the repository root and production branch `main`.
+1. Import `Po0rFish/telecom-sound-manager`, select the Vite preset, repository root and production branch `main`.
 2. Use Node.js 24, install command `npm ci`, build command `npm run build`, output `dist`.
-3. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for Production (and Preview if used), using the public values from `.env.local`. The ignored local file is not sent through Git. Use the dedicated demo project. Redeploy after changing environment variables.
+3. Leave `VITE_DATA_SOURCE` unset or set it to `browser`. Supabase variables are not needed; remove them from the browser-demo environment if previously configured.
 4. Deploy. `vercel.json` supplies the SPA fallback for nested routes.
-5. Open and refresh `/dashboard`, `/owners`, `/sounds`, `/sounds/new`, and an existing `/sounds/<id>`.
-6. Add the resulting live URL and screenshots to README.
+5. Open and refresh `/dashboard`, `/owners`, `/sounds`, `/sounds/new` and an existing sound route.
 
-These steps prepare a deployment; no hosting account or remote project has been changed by these files.
+These repository changes do not change Vercel environment settings or remote Supabase policies. Redeploy after changing environment variables. The public URL is https://telecom-sound-manager.vercel.app.
 
-## Supabase access model
+## Browser data
 
-The application now runs as an interactive read-only demo. Forms, buttons and local audio previews remain available. Save/delete actions show a demo notice, and the shared Supabase fetch wrapper rejects all methods except GET/HEAD before network access. This is a frontend behavior guard, not server authorization: direct API clients can bypass it.
+The first data query initializes IndexedDB with fictional owners, sounds and a generated WAV tone. Audio uploads are stored as Blobs, never sent to a backend. The per-file limit is 5 MB; stored demo audio is capped at 50 MB. Browser quotas may be lower, and storage failures are reported to the user.
 
-The project owner reported completing the access audit: RLS is enabled on `public.owners`, `public.sounds` and `storage.objects`; remaining policies grant anonymous SELECT only, with Storage SELECT scoped to the `sounds` bucket. Previous anonymous INSERT/UPDATE/DELETE policies were removed. A subsequent read-only connectivity check returned HTTP 200 for both tables and a sample audio file. These policy changes were made outside this repository; the connectivity check verifies reading, not denial of writes. Do not assume the backend is protected by the frontend guard. For another project, review effective privileges, policies and callable functions before publishing.
+Reset Demo asks for confirmation, atomically replaces saved records and audio, and reloads the Sounds page to clear forms, playback URLs and query caches. Clearing browser site data also starts a fresh demo. Data is scoped to a browser profile and origin; it is not synced across devices. Private browsing and browser storage eviction can discard data.
 
-This application currently has no login. Browser requests use the project's public key and anonymous database permissions. A public key is expected in the browser; a secret/service-role key must never be used here.
+## Optional Supabase read-only mode
 
-Access options (this demo uses the first option):
+This is a separate integration for an already configured, dedicated Supabase project. It is not needed to run or review the interactive browser demo. No database migrations or seed SQL are currently provided, so this mode is not a reproducible backend bootstrap.
 
-- Public read-only demo: grant anonymous SELECT on demo owners/sounds; deny anonymous database writes and Storage uploads/deletes. Editing controls show a demo notice without submitting changes.
-- Editable demo: explicitly accept that anonymous visitors can modify the shared sample data. Use only disposable data, limited Storage file sizes/types, and a process to reset the demo. Do not connect this mode to a real customer database.
+Copy `.env.example` to `.env.local`, set `VITE_DATA_SOURCE=supabase`, and provide `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. Restart Vite or rebuild. Use public configuration only: `VITE_` variables are included in the browser bundle. Never put a secret/service-role key in them.
 
-Inspect existing RLS policies and grants before changing them. This repository does not contain the remote schema or policies, so it does not apply guessed SQL to an existing database.
+This mode reads existing `owners` and `sounds` tables matching `src/features/*/model/dbTypes.ts`, and uses a public `sounds` Storage bucket for audio playback. It retains the frontend write guard: save/delete show a notice and only GET/HEAD requests are forwarded. There is no authentication or supported writable backend mode.
 
-Run [`scripts/audit-supabase-access.sql`](../scripts/audit-supabase-access.sql) in the project's SQL Editor to inspect table privileges, RLS policies, callable public functions and the sounds bucket. The script only reads metadata. Its results require review; it does not certify or enforce read-only access. Review any additional exposed schemas or backend endpoints separately.
+The frontend guard is not server authorization. The project owner previously reported enabling RLS and removing anonymous write policies; those remote settings have not been verified by this implementation. Review effective grants, policies and callable functions for your project. Public audio retrieval does not grant upload or deletion permissions.
 
-Required resources: `owners` and `sounds` tables matching `src/features/*/model/dbTypes.ts`; public `sounds` Storage bucket for the current public-URL playback implementation. Public retrieval does not grant upload or deletion permissions: those operations need appropriate Storage policies.
+Run `scripts/audit-supabase-access.sql` in the project's SQL Editor for a read-only metadata audit. With `.env.local` configured, `node --env-file=.env.local scripts/check-supabase.mjs` checks table and sample audio reading without printing credentials. Neither check proves that all writes are denied.
 
-## Audio lifecycle
+## Retained Supabase audio lifecycle code
 
-Uploads use unique filenames. After a successful replacement/removal/deletion, the application attempts to remove the previous file. Failed saves attempt to clean up the new upload. Cleanup first checks database references and only manages UUID filenames in this project's `sounds` bucket. External URLs and legacy filenames are left alone.
+The retained upload/save code is guarded in Supabase mode. Its lifecycle design uses unique filenames. After a successful replacement/removal/deletion, the application attempts to remove the previous file. Failed saves attempt to clean up the new upload. Cleanup first checks database references and only manages UUID filenames in this project's `sounds` bucket. External URLs and legacy filenames are left alone.
 
 The reference check requires visibility of all demo sound records. Do not use this client-side cleanup unchanged with tenant-filtered SELECT policies. The reference check and Storage deletion are not atomic; a production multi-user system should move cleanup to a trusted backend/job with concurrency handling. Network or permission failures may leave orphan files; the UI reports cleanup failures separately from successful saves. Inspect Storage before retrying an uncertain save.
 
-## Verification before sharing
+## Verification
 
-- `npm ci`, `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`.
-- `node --env-file=.env.local scripts/check-supabase.mjs` checks read access and one sample audio URL without printing credentials.
-- Open create/edit forms, select and preview local audio, and remove it locally. Save and confirm deletion: verify the demo notice, unchanged server records, and no outgoing write requests in the browser network panel.
-- Confirm only one audio plays at a time; test an unavailable URL and an unsupported audio encoding.
-- Confirm failed saves preserve the existing recording and display an error.
-- Compare dashboard counts with Owners; follow missing-setup links to create/edit forms.
-- Check desktop and narrow viewport layouts, keyboard operation, and refresh nested routes on the deployed host.
-
-Sources: [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite), [Supabase Storage access control](https://supabase.com/docs/guides/storage/security/access-control), [public and private buckets](https://supabase.com/docs/guides/storage/buckets/fundamentals).
+- Run `npm test`, `npm run lint`, `npm run typecheck`, and `npm run build`.
+- Run `node scripts/browser-smoke.mjs` after a browser-mode build. It checks actual IndexedDB CRUD, audio persistence after navigation/reload, deletion, reset, playback and mobile overflow. External requests fail the test.
+- Manually confirm filtering and dashboard/checklist updates after edits, invalid uploads, and Reset Demo cancellation.
+- For a hosted browser build, verify the network panel contains no Supabase requests, including when saving, deleting or uploading audio.
+- Supabase access checks are separate and are not performed by browser-demo tests.

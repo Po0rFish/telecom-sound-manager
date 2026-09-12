@@ -34,9 +34,10 @@ export const useSoundForm = ({
   const [form, setForm] = useState<FormState>(initialValues);
 
   useEffect(() => {
-    const audioUrl = form.audioUrl;
+    // Only revoke previews created by this form, not shared IndexedDB playback URLs.
+    const audioUrl = form.file ? form.audioUrl : undefined;
     return () => revokeBlobUrl(audioUrl);
-  }, [form.audioUrl]);
+  }, [form.audioUrl, form.file]);
 
   const errors = useMemo(
     () => validateSoundForm(form, submitted),
