@@ -29,13 +29,14 @@ export default function SoundCardsGrid({
   onOpenRequiredSetupItem,
 }: SoundCardsGridProps) {
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={1.5}>
       {sounds.map(sound => {
         const owner = ownerMap[sound.ownerId];
 
         return (
-          <Grid key={sound.id} size={{ xs: 12, md: 6 }}>
+          <Grid key={sound.id} size={12}>
             <SoundCard
+              compact
               sound={sound}
               ownerName={owner?.name || "Unknown owner"}
               ownerType={owner?.type || sound.ownerType}

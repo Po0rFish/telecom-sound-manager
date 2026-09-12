@@ -68,29 +68,22 @@ export default function OwnerCard({
   return (
     <Card
       sx={{
-        borderRadius: 3,
-        boxShadow: 1,
-        transition: "box-shadow 0.2s ease, transform 0.2s ease",
-
-        "&:hover": {
-          boxShadow: 3,
-          transform: "translateY(-2px)",
-        },
+        height: "100%",
       }}
     >
       <CardContent>
         <Stack
-          direction={{ xs: "column", md: "row" }}
+          direction="column"
           spacing={2}
           sx={{
             justifyContent: "space-between",
             alignItems: {
               xs: "flex-start",
-              md: "center",
+              md: "stretch",
             },
           }}
         >
-          <Stack spacing={1}>
+          <Stack spacing={1} sx={{ minWidth: 0, overflowWrap: "anywhere" }}>
             <Stack
               direction="row"
               spacing={1}
@@ -120,9 +113,9 @@ export default function OwnerCard({
               {getSetupMessage(stats)}
             </Typography>
 
-            <Typography variant="body2" color="text.secondary">
+            {remainingSetupLabels && <Typography variant="body2" color="text.secondary">
               Required setup: {remainingSetupLabels}
-            </Typography>
+            </Typography>}
 
             <Stack
               direction="row"

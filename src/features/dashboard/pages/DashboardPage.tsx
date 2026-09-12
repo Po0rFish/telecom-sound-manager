@@ -29,13 +29,13 @@ export default function DashboardPage() {
     <PageContainer>
       <PageHeader title="Dashboard" subtitle="Telecom audio configuration overview" />
       <Stack spacing={3}>
-        <Typography color="text.secondary">A configuration is complete when every required sound has audio and is active.</Typography>
+        <Typography variant="body2" color="text.secondary">A configuration is complete when every required sound has audio and is active.</Typography>
         <Grid container spacing={2}>
           {metrics.map(([label, count]) => (
-            <Grid key={label} size={{ xs: 12, sm: 6, lg: 4 }}>
-              <Card><CardContent>
-                <Typography color="text.secondary">{label}</Typography>
-                <Typography variant="h4">{count}</Typography>
+            <Grid key={label} size={{ xs: 6, sm: 4, lg: 3 }}>
+              <Card sx={{ height: "100%" }}><CardContent>
+                <Typography variant="body2" color="text.secondary" sx={{ minHeight: 40 }}>{label}</Typography>
+                <Typography variant="h4" sx={{ mt: 1, fontVariantNumeric: "tabular-nums", color: (label === "Missing audio" || label === "Incomplete configurations") && Number(count) > 0 ? "warning.main" : "text.primary" }}>{count}</Typography>
               </CardContent></Card>
             </Grid>
           ))}

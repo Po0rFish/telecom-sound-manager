@@ -20,7 +20,7 @@ export const theme = createTheme({
   },
 
   shape: {
-    borderRadius: 14,
+    borderRadius: 8,
   },
 
   typography: {
@@ -28,14 +28,18 @@ export const theme = createTheme({
 
     h4: {
       fontWeight: 700,
+      fontSize: '1.75rem',
+      letterSpacing: '-0.025em',
     },
 
     h5: {
       fontWeight: 700,
+      fontSize: '1.25rem',
     },
 
     h6: {
       fontWeight: 600,
+      fontSize: '1rem',
     },
 
     button: {
@@ -56,7 +60,7 @@ export const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 8,
           boxShadow: 'none',
         },
       },
@@ -65,8 +69,9 @@ export const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 18,
-          boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
+          borderRadius: 10,
+          boxShadow: 'none',
+          border: '1px solid #e2e8f0',
         },
       },
     },

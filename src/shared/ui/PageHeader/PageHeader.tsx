@@ -17,12 +17,12 @@ export function PageHeader({
   return (
     <div className="page-header">
       <div className="page-header__content">
-        <Typography variant="h4" className="page-header__title">
+        <Typography component="h1" variant="h4" className="page-header__title">
           {title}
         </Typography>
 
         {subtitle && (
-          <Typography color="text.secondary" className="page-header__subtitle">
+          <Typography variant="body2" color="text.secondary" className="page-header__subtitle">
             {subtitle}
           </Typography>
         )}

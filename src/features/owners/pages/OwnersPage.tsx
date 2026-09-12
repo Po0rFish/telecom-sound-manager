@@ -107,7 +107,7 @@ export default function OwnersPage() {
 
   if (filteredOwners.length > 0) {
     ownersContent = (
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         {filteredOwners.map(({ owner, stats, checklist }) => (
           <Grid
             key={owner.id}
@@ -133,7 +133,7 @@ export default function OwnersPage() {
       <PageHeader title={PAGE_TITLE} subtitle={PAGE_SUBTITLE} />
 
       <Stack spacing={3}>
-        <Card sx={{ borderRadius: 3, boxShadow: 1 }}>
+        <Card>
           <CardContent>
             <OwnerFilters
               search={search}

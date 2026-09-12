@@ -12,7 +12,7 @@ export function AppLayout() {
           Sound Manager
         </Typography>
 
-        <Stack spacing={1}>
+        <Stack component="nav" aria-label="Main navigation" className="app-layout__nav" spacing={1}>
           <Button component={NavLink} to="/dashboard" fullWidth className="app-layout__nav-link">
             Dashboard
           </Button>

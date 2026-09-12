@@ -6,14 +6,16 @@
 
 .app-layout__sidebar {
   flex-shrink: 0;
-  width: 260px;
-  min-height: 100vh;
-  padding: 16px;
+  width: 208px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  padding: 24px 16px;
   background: #0f172a;
   color: #ffffff;
 }
 
-.app-layout__logo {
+.app-layout .app-layout__logo {
   margin-bottom: 24px;
 }
 
@@ -28,7 +30,13 @@
 }
 
 .app-layout__nav-link.active {
-  background: rgba(255, 255, 255, 0.14) !important;
+  background: #1e40af !important;
+  box-shadow: inset 3px 0 #93c5fd;
+}
+
+.app-layout__nav-link:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
 }
 
 .app-layout__content {
@@ -39,7 +47,7 @@
 }
 
 .app-layout__header {
-  min-height: 72px;
+  min-height: 56px;
   padding: 0 24px;
   display: flex;
   align-items: center;
@@ -51,9 +59,12 @@
 .app-layout__main {
   flex: 1;
   padding: 24px;
+  width: 100%;
+  max-width: 1488px;
+  margin: 0 auto;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 899px) {
   .app-layout {
     flex-direction: column;
   }
@@ -61,10 +72,27 @@
   .app-layout__sidebar {
     width: 100%;
     min-height: auto;
+    height: auto;
+    position: static;
+    padding: 12px 16px;
+  }
+
+  .app-layout .app-layout__logo {
+    margin-bottom: 8px;
+  }
+
+  .app-layout .app-layout__nav {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .app-layout .app-layout__nav-link {
+    margin: 0;
+    justify-content: center !important;
   }
 
   .app-layout__header {
-    padding: 16px;
+    display: none;
   }
 
   .app-layout__main {

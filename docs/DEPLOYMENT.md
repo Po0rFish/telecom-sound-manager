@@ -2,9 +2,9 @@
 
 ## Vercel
 
-1. Import this repository into Vercel and select the Vite preset.
+1. Import `Po0rFish/telecom-sound-manager` into Vercel, select the Vite preset, use the repository root and production branch `main`.
 2. Use Node.js 24, install command `npm ci`, build command `npm run build`, output `dist`.
-3. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for the deployment environment. Use the dedicated demo project.
+3. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for Production (and Preview if used), using the public values from `.env.local`. The ignored local file is not sent through Git. Use the dedicated demo project. Redeploy after changing environment variables.
 4. Deploy. `vercel.json` supplies the SPA fallback for nested routes.
 5. Open and refresh `/dashboard`, `/owners`, `/sounds`, `/sounds/new`, and an existing `/sounds/<id>`.
 6. Add the resulting live URL and screenshots to README.
@@ -15,7 +15,7 @@ These steps prepare a deployment; no hosting account or remote project has been 
 
 The application now runs as an interactive read-only demo. Forms, buttons and local audio previews remain available. Save/delete actions show a demo notice, and the shared Supabase fetch wrapper rejects all methods except GET/HEAD before network access. This is a frontend behavior guard, not server authorization: direct API clients can bypass it.
 
-Before public deployment, deny INSERT/UPDATE/DELETE and other write privileges for browser roles on owners/sounds, and deny Storage writes for the sounds bucket through the actual project grants/policies. Review callable functions and any existing broad policies too. Remote policies have not been inspected or changed by this local implementation. Do not assume the backend is protected by the frontend guard.
+The project owner reported completing the access audit: RLS is enabled on `public.owners`, `public.sounds` and `storage.objects`; remaining policies grant anonymous SELECT only, with Storage SELECT scoped to the `sounds` bucket. Previous anonymous INSERT/UPDATE/DELETE policies were removed. A subsequent read-only connectivity check returned HTTP 200 for both tables and a sample audio file. These policy changes were made outside this repository; the connectivity check verifies reading, not denial of writes. Do not assume the backend is protected by the frontend guard. For another project, review effective privileges, policies and callable functions before publishing.
 
 This application currently has no login. Browser requests use the project's public key and anonymous database permissions. A public key is expected in the browser; a secret/service-role key must never be used here.
 

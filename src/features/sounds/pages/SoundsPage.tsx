@@ -167,8 +167,8 @@ export default function SoundsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Sound Manager"
-        subtitle="Portfolio demo for managing audio records"
+        title="Sounds"
+        subtitle="Browse and preview telecom audio records"
         action={
           <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
             <Tooltip title={viewMode === 'list' ? 'Switch to grid view' : 'Switch to list view'}>
@@ -179,13 +179,13 @@ export default function SoundsPage() {
                 {viewMode === 'list' ? <GridViewIcon /> : <ViewListIcon />}
               </IconButton>
             </Tooltip>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreate}
-          >
-            New Sound
-          </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreate}
+            >
+              New Sound
+            </Button>
           </Stack>
         }
       />
