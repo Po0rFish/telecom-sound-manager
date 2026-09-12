@@ -69,13 +69,17 @@ export default function OwnerCard({
     <Card
       sx={{
         height: "100%",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <CardContent>
+      <CardContent sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
         <Stack
           direction="column"
           spacing={2}
+          useFlexGap
           sx={{
+            flex: 1,
             justifyContent: "space-between",
             alignItems: {
               xs: "flex-start",
@@ -83,7 +87,7 @@ export default function OwnerCard({
             },
           }}
         >
-          <Stack spacing={1} sx={{ minWidth: 0, overflowWrap: "anywhere" }}>
+          <Stack spacing={1} sx={{ flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>
             <Stack
               direction="row"
               spacing={1}
@@ -169,10 +173,8 @@ export default function OwnerCard({
             variant="outlined"
             onClick={() => onViewSounds(owner.id)}
             sx={{
-              width: {
-                xs: "100%",
-                md: "auto",
-              },
+              width: "100%",
+              mt: "auto",
               flexShrink: 0,
             }}
           >
